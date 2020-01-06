@@ -26,32 +26,32 @@ goblin supports these http methods.
 You can define routing like this.
 
 ```go
-    r := goblin.NewRouter()
+r := goblin.NewRouter()
 
-	r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/")
-    }))
+r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "/")
+}))
 
-	r.POST(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/")
-    }))
+r.POST(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "/")
+}))
 ```
 
 ## Named parameters
 You can use named parameters like this.
 
 ```go
-    r := goblin.NewRouter()
+r := goblin.NewRouter()
 
-	r.GET(`/foo/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/%v/", id)
-    }))
+r.GET(`/foo/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := goblin.GetParam(r.Context(), "id")
+    fmt.Fprintf(w, "/foo/%v/", id)
+}))
 
-	r.POST(`/foo/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		name := goblin.GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/%v/", name)
-    }))
+r.POST(`/foo/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    name := goblin.GetParam(r.Context(), "name")
+    fmt.Fprintf(w, "/foo/%v/", name)
+}))
 ```
 
 ## Named parameters with regular expression
@@ -60,10 +60,10 @@ You can also use named parameter with regular expression like this.
 `[name:pattern]`
 
 ```go
-	r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/%v/", id)
-	}))
+r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := goblin.GetParam(r.Context(), "id")
+    fmt.Fprintf(w, "/foo/%v/", id)
+}))
 ```
 
 A default pattern is wildcard.
@@ -74,17 +74,17 @@ A default pattern is wildcard.
 A routing pattern matching priority depends on an order of routing definition.
 
 ```go
-    r := goblin.NewRouter()
+r := goblin.NewRouter()
 
-	r.GET(`/foo/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `/foo/:id/`)
-    }))
-	r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `/foo/:id[^\d+$]/`)
-    }))
-	r.GET(`/foo/:id[^\w+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `/foo/:id[^\w+$]/`)
-    }))
+r.GET(`/foo/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `/foo/:id/`)
+}))
+r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `/foo/:id[^\d+$]/`)
+}))
+r.GET(`/foo/:id[^\w+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `/foo/:id[^\w+$]/`)
+}))
 ```
 
 # Examples
