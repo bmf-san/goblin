@@ -61,17 +61,19 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	path := req.URL.Path
 
-	handler, params, err := r.tree.Search(method, path)
+	result, err := r.tree.Search(method, path)
 
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`"Access %s: %s"`, path, err), http.StatusNotImplemented)
 		return
 	}
 
-	ctx := context.WithValue(req.Context(), ParamsKey, *params)
-	req = req.WithContext(ctx)
+	if result.params != nil {
+		ctx := context.WithValue(req.Context(), ParamsKey, result.params)
+		req = req.WithContext(ctx)
+	}
 
-	handler(w, req)
+	result.handler(w, req)
 }
 
 // GetParam get parameters from request.

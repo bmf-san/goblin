@@ -104,29 +104,29 @@ func main() {
 	r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
-	r.GET(`/foo/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/")
+	r.GET(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/foo")
 	}))
-	r.GET(`/foo/bar/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/bar/")
+	r.GET(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/foo/bar")
 	}))
-	r.GET(`/foo/bar/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/bar/%v/", id)
+		fmt.Fprintf(w, "/foo/bar/%v", id)
 	}))
-	r.GET(`/foo/bar/:id/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		name := goblin.GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/bar/%v/%v/", id, name)
-	}))
-	r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/%v/", id)
-	}))
-	r.GET(`/foo/:id[^\d+$]/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		name := goblin.GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/%v/%v/", id, name)
+		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
+	}))
+	r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := goblin.GetParam(r.Context(), "id")
+		fmt.Fprintf(w, "/foo/%v", id)
+	}))
+	r.GET(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := goblin.GetParam(r.Context(), "id")
+		name := goblin.GetParam(r.Context(), "name")
+		fmt.Fprintf(w, "/foo/%v/%v", id, name)
 	}))
 
 	http.ListenAndServe(":8000", r)
@@ -135,14 +135,56 @@ func main() {
 
 If you want to try it, you can use an [_examples](https://github.com/bmf-san/goblin/blob/master/_examples).
 
-# Router design
-A role of an url router.
+# Benchmark
+go version: 1.14
 
-![A role of an url router](https://user-images.githubusercontent.com/13291041/70861219-30929d80-1f6e-11ea-8e86-114e8ba0942b.png "A role of an url router")
+```go
+go test -bench=.
+```
+
+Run a total of 203 routes of GithubAPI.
+
+Tested routes:
+- [beego/mux](https://github.com/beego/mux)
+- [julienschmidt/httprouter](https://github.com/julienschmidt/httprouter)
+- [dimfeld/httptreemux](https://github.com/dimfeld/httptreemux)
+- [gin-gonic/gin](https://github.com/gin-gonic/gin)
+- [go-chi/chi](https://github.com/go-chi/chi)
+
+Memory Consumption:
+```
+goblin: 62896 Bytes
+beego-mux: 107328 Bytes
+HttpRouter: 37096 Bytes
+httptreemux: 78896 Bytes
+gin: 59128 Bytes
+chi: 71528 Bytes
+```
+
+Benchmark Results:
+```
+BenchmarkGoblin-4                           1363            793539 ns/op         1056676 B/op       3455 allocs/op
+BenchmarkBeegoMux-4                         1420            972325 ns/op         1142023 B/op       3475 allocs/op
+BenchmarkHttpRouter-4                       1393            878506 ns/op         1021039 B/op       2604 allocs/op
+BenchmarkHttpTreeMux-4                      1459            832753 ns/op         1073111 B/op       3108 allocs/op
+BenchmarkGin-4                              1033            974177 ns/op         1014084 B/op       2642 allocs/op
+BenchmarkChi-4                              1239            846166 ns/op         1095217 B/op       3047 allocs/op
+BenchmarkGoblinRequests-4                     60          19327539 ns/op          884059 B/op      11221 allocs/op
+BenchmarkBeegoMuxRequests-4                   58          19789097 ns/op          969311 B/op      11241 allocs/op
+BenchmarkHttpRouterRequests-4                 58          21749265 ns/op          848012 B/op      10370 allocs/op
+BenchmarkHttpTreeMuxRequests-4                57          24634215 ns/op          900326 B/op      10874 allocs/op
+BenchmarkHttpGinRequests-4                    45          24686299 ns/op          840777 B/op      10405 allocs/op
+BenchmarkHttpChiRequests-4                    45          22363389 ns/op          921963 B/op      10811 allocs/op
+```
+
+# Router design
+Router accepts requests and dispatches handlers.
+
+![architecture](https://user-images.githubusercontent.com/13291041/79637830-30750980-81bd-11ea-8815-93f7cd104499.png)
 
 goblin based on trie tree structure.
 
-![Based on trie tree](https://user-images.githubusercontent.com/13291041/70862745-7148e180-1f83-11ea-85d3-2cd8fb4db0d3.png "Based on trie tree")
+![trie](https://user-images.githubusercontent.com/13291041/79637833-34089080-81bd-11ea-8af4-f0f3f7c2fedc.png)
 
 # Contribution
 Please take a look at our [CONTRIBUTING.md](https://github.com/bmf-san/goblin/blob/master/CONTRIBUTING.md) file.

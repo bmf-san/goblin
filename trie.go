@@ -26,7 +26,21 @@ type Param struct {
 }
 
 // Params is parameters.
-type Params []Param
+type Params []*Param
+
+// Result is a search result.
+type Result struct {
+	handler http.HandlerFunc
+	params  Params
+}
+
+const (
+	pathDelimiter     = "/"
+	paramDelimiter    = ":"
+	leftPtnDelimiter  = "["
+	rightPtnDelimiter = "]"
+	ptnWildcard       = "(.+)"
+)
 
 // NewTree is create a new trie tree.
 func NewTree() *Tree {
@@ -65,7 +79,7 @@ func NewTree() *Tree {
 func (t *Tree) Insert(method string, path string, handler http.HandlerFunc) error {
 	curNode := t.method[method]
 
-	if path == "/" {
+	if path == pathDelimiter {
 		if len(curNode.label) != 0 && curNode.handler == nil {
 			return errors.New("Root node already exists")
 		}
@@ -76,7 +90,7 @@ func (t *Tree) Insert(method string, path string, handler http.HandlerFunc) erro
 		return nil
 	}
 
-	for _, l := range deleteEmpty(strings.Split(path, "/")) {
+	for _, l := range deleteEmpty(strings.Split(path, pathDelimiter)) {
 		if nextNode, ok := curNode.children[l]; ok {
 			curNode = nextNode
 		} else {
@@ -94,16 +108,16 @@ func (t *Tree) Insert(method string, path string, handler http.HandlerFunc) erro
 }
 
 // Search search a path from a tree.
-func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, error) {
+func (t *Tree) Search(method string, path string) (*Result, error) {
 	var params Params
 
 	n := t.method[method]
 
 	if len(n.label) == 0 && len(n.children) == 0 {
-		return nil, nil, errors.New("tree is empty")
+		return nil, errors.New("tree is empty")
 	}
 
-	label := deleteEmpty(strings.Split(path, "/"))
+	label := deleteEmpty(strings.Split(path, pathDelimiter))
 	curNode := n
 
 	for _, l := range label {
@@ -117,13 +131,13 @@ func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, er
 			// 3 /foo/:id[^\w+$]
 			// priority is 1, 2, 3
 			for c := range curNode.children {
-				if string([]rune(c)[0]) == ":" {
+				if string([]rune(c)[0]) == paramDelimiter {
 					ptn := getPattern(c)
 
 					// HACK: regexp is slow so initialize a pattern as a global variable.
 					if regexp.MustCompile(ptn).Match([]byte(l)) {
 						param := getParameter(c)
-						params = append(params, Param{
+						params = append(params, &Param{
 							key:   param,
 							value: l,
 						})
@@ -131,7 +145,7 @@ func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, er
 						curNode = curNode.children[c]
 						break
 					} else {
-						return nil, nil, errors.New("param does not match")
+						return nil, errors.New("param does not match")
 					}
 				}
 			}
@@ -139,29 +153,29 @@ func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, er
 	}
 
 	if curNode.handler == nil {
-		return nil, nil, errors.New("handler is not regsitered")
+		return nil, errors.New("handler is not registered")
 	}
 
-	return curNode.handler, &params, nil
+	return &Result{
+		handler: curNode.handler,
+		params:  params,
+	}, nil
 }
-
-// wildcard pattern.
-const ptnWildcard = `(.+)`
 
 // getPattern get a pattern from a label.
 // ex.
 // :id[^\d+$] → ^\d+$
 // :id        → *
 func getPattern(label string) string {
-	startI := strings.Index(label, "[")
-	endI := strings.Index(label, "]")
+	leftI := strings.Index(label, leftPtnDelimiter)
+	rightI := strings.Index(label, rightPtnDelimiter)
 
 	// if label has not pattern, return wild card pattern as default.
-	if startI == -1 || endI == -1 {
+	if leftI == -1 || rightI == -1 {
 		return ptnWildcard
 	}
 
-	return label[startI+1 : endI]
+	return label[leftI+1 : rightI]
 }
 
 // getParameter get a parameter from a label.
@@ -169,15 +183,15 @@ func getPattern(label string) string {
 // :id[^\d+$] → id
 // :id        → id
 func getParameter(label string) string {
-	startI := strings.Index(label, ":")
-	endI := func(l string) int {
+	leftI := strings.Index(label, paramDelimiter)
+	rightI := func(l string) int {
 		r := []rune(l)
 
 		var n int
 
 		for i := 0; i < len(r); i++ {
 			n = i
-			if string(r[i]) == "[" {
+			if string(r[i]) == leftPtnDelimiter {
 				n = i
 				break
 			} else if i == len(r)-1 {
@@ -189,5 +203,5 @@ func getParameter(label string) string {
 		return n
 	}(label)
 
-	return label[startI+1 : endI]
+	return label[leftI+1 : rightI]
 }
