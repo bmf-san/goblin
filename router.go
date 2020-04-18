@@ -68,8 +68,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ctx := context.WithValue(req.Context(), ParamsKey, result.params)
-	req = req.WithContext(ctx)
+	if result.params != nil {
+		ctx := context.WithValue(req.Context(), ParamsKey, result.params)
+		req = req.WithContext(ctx)
+	}
 
 	result.handler(w, req)
 }

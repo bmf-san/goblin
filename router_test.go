@@ -81,91 +81,91 @@ func TestRouter(t *testing.T) {
 	}))
 
 	cases := []struct {
-		url    string
+		path   string
 		method string
 		code   int
 		body   string
 	}{
 		{
-			url:    "/",
+			path:   "/",
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/",
 		},
 		{
-			url:    "/foo/",
+			path:   "/foo/",
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/foo/",
 		},
 		{
-			url:    "/foo/bar/",
+			path:   "/foo/bar/",
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/foo/bar/",
 		},
 		{
-			url:    "/foo/bar/123/",
+			path:   "/foo/bar/123/",
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/foo/bar/123/",
 		},
 		{
-			url:    "/foo/bar/123/john/",
+			path:   "/foo/bar/123/john/",
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/foo/bar/123/john/",
 		},
 		{
-			url:    "/foo/123/",
+			path:   "/foo/123/",
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/foo/123/",
 		},
 		{
-			url:    "/foo/123/john/",
+			path:   "/foo/123/john/",
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/foo/123/john/",
 		},
 		{
-			url:    "/",
+			path:   "/",
 			method: http.MethodPost,
 			code:   http.StatusOK,
 			body:   "/",
 		},
 		{
-			url:    "/foo/",
+			path:   "/foo/",
 			method: http.MethodPost,
 			code:   http.StatusOK,
 			body:   "/foo/",
 		},
 		{
-			url:    "/foo/bar/",
+			path:   "/foo/bar/",
 			method: http.MethodPost,
 			code:   http.StatusOK,
 			body:   "/foo/bar/",
 		},
 		{
-			url:    "/foo/bar/123/",
+			path:   "/foo/bar/123/",
 			method: http.MethodPost,
 			code:   http.StatusOK,
 			body:   "/foo/bar/123/",
 		},
 		{
-			url:    "/foo/bar/123/john/",
+			path:   "/foo/bar/123/john/",
 			method: http.MethodPost,
 			code:   http.StatusOK,
 			body:   "/foo/bar/123/john/",
 		},
 		{
-			url:    "/foo/123/",
+			path:   "/foo/123/",
 			method: http.MethodPost,
 			code:   http.StatusOK,
 			body:   "/foo/123/",
 		},
 		{
-			url:    "/foo/123/john/",
+			path:   "/foo/123/john/",
 			method: http.MethodPost,
 			code:   http.StatusOK,
 			body:   "/foo/123/john/",
@@ -173,19 +173,19 @@ func TestRouter(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req := httptest.NewRequest(c.method, c.url, nil)
+		req := httptest.NewRequest(c.method, c.path, nil)
 		rec := httptest.NewRecorder()
 
 		r.ServeHTTP(rec, req)
 
 		if c.code != rec.Code {
-			t.Errorf("url:%v code:%v body:%v rec.Code:%v", c.url, c.code, c.body, rec.Code)
+			t.Errorf("path:%v code:%v body:%v rec.Code:%v", c.path, c.code, c.body, rec.Code)
 		}
 
 		recBody, _ := ioutil.ReadAll(rec.Body)
 		body := string(recBody)
 		if c.body != body {
-			t.Errorf("url:%v code:%v body:%v rec.Body:%v", c.url, c.code, c.body, body)
+			t.Errorf("path:%v code:%v body:%v rec.Body:%v", c.path, c.code, c.body, body)
 		}
 	}
 }
