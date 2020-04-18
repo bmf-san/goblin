@@ -26,7 +26,13 @@ type Param struct {
 }
 
 // Params is parameters.
-type Params []Param
+type Params []*Param
+
+// Result is a search result.
+type Result struct {
+	handler http.HandlerFunc
+	params  Params
+}
 
 const (
 	pathDelimiter     = "/"
@@ -102,13 +108,13 @@ func (t *Tree) Insert(method string, path string, handler http.HandlerFunc) erro
 }
 
 // Search search a path from a tree.
-func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, error) {
+func (t *Tree) Search(method string, path string) (*Result, error) {
 	var params Params
 
 	n := t.method[method]
 
 	if len(n.label) == 0 && len(n.children) == 0 {
-		return nil, nil, errors.New("tree is empty")
+		return nil, errors.New("tree is empty")
 	}
 
 	label := deleteEmpty(strings.Split(path, pathDelimiter))
@@ -131,7 +137,7 @@ func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, er
 					// HACK: regexp is slow so initialize a pattern as a global variable.
 					if regexp.MustCompile(ptn).Match([]byte(l)) {
 						param := getParameter(c)
-						params = append(params, Param{
+						params = append(params, &Param{
 							key:   param,
 							value: l,
 						})
@@ -139,7 +145,7 @@ func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, er
 						curNode = curNode.children[c]
 						break
 					} else {
-						return nil, nil, errors.New("param does not match")
+						return nil, errors.New("param does not match")
 					}
 				}
 			}
@@ -147,10 +153,13 @@ func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, er
 	}
 
 	if curNode.handler == nil {
-		return nil, nil, errors.New("handler is not registered")
+		return nil, errors.New("handler is not registered")
 	}
 
-	return curNode.handler, &params, nil
+	return &Result{
+		handler: curNode.handler,
+		params:  params,
+	}, nil
 }
 
 // getPattern get a pattern from a label.

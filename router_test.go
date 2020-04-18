@@ -192,11 +192,11 @@ func TestRouter(t *testing.T) {
 
 func TestGetParam(t *testing.T) {
 	params := &Params{
-		Param{
+		&Param{
 			key:   "id",
 			value: "123",
 		},
-		Param{
+		&Param{
 			key:   "name",
 			value: "john",
 		},

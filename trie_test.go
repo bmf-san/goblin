@@ -69,23 +69,18 @@ func TestSearch(t *testing.T) {
 		path   string
 	}
 
-	type Expected struct {
-		handler http.HandlerFunc
-		params  *Params
-	}
-
 	cases := []struct {
 		item     Item
-		expected Expected
+		expected *Result
 	}{
 		{
 			item: Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params:  &Params{},
+				params:  Params{},
 			},
 		},
 		{
@@ -93,9 +88,9 @@ func TestSearch(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params:  &Params{},
+				params:  Params{},
 			},
 		},
 		{
@@ -103,9 +98,9 @@ func TestSearch(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params:  &Params{},
+				params:  Params{},
 			},
 		},
 		{
@@ -113,10 +108,10 @@ func TestSearch(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/123/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
@@ -128,10 +123,10 @@ func TestSearch(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/123",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
@@ -143,14 +138,14 @@ func TestSearch(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/123/john",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
-					Param{
+					&Param{
 						key:   "name",
 						value: "john",
 					},
@@ -162,14 +157,14 @@ func TestSearch(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/123/john/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
-					Param{
+					&Param{
 						key:   "name",
 						value: "john",
 					},
@@ -181,9 +176,9 @@ func TestSearch(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params:  &Params{},
+				params:  Params{},
 			},
 		},
 		{
@@ -191,9 +186,9 @@ func TestSearch(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params:  &Params{},
+				params:  Params{},
 			},
 		},
 		{
@@ -201,9 +196,9 @@ func TestSearch(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/bar/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params:  &Params{},
+				params:  Params{},
 			},
 		},
 		{
@@ -211,10 +206,10 @@ func TestSearch(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/123/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
@@ -226,10 +221,10 @@ func TestSearch(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/bar/123",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
@@ -241,14 +236,14 @@ func TestSearch(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/bar/123/john",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
-					Param{
+					&Param{
 						key:   "name",
 						value: "john",
 					},
@@ -260,14 +255,14 @@ func TestSearch(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/123/john/",
 			},
-			expected: Expected{
+			expected: &Result{
 				handler: fooHandler,
-				params: &Params{
-					Param{
+				params: Params{
+					&Param{
 						key:   "id",
 						value: "123",
 					},
-					Param{
+					&Param{
 						key:   "name",
 						value: "john",
 					},
@@ -277,10 +272,24 @@ func TestSearch(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		handler, params, err := tree.Search(c.item.method, c.item.path)
+		actual, err := tree.Search(c.item.method, c.item.path)
 
 		if err != nil {
-			t.Errorf("handler:%v params:%v expected:%v", handler, params, c.expected)
+			t.Errorf("handler:%v params:%v expected:%v", actual.handler, actual.params, c.expected)
+		}
+
+		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+			t.Errorf("actual: %v expected: %v\n", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
+		}
+
+		for i, param := range actual.params {
+			if !reflect.DeepEqual(param, c.expected.params[i]) {
+				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
 		}
 	}
 }
