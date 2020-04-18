@@ -360,6 +360,7 @@ func init() {
 	})
 
 	calcMem("gin", func() {
+		ginGonic.SetMode(ginGonic.ReleaseMode)
 		router := ginGonic.New()
 		handler := func(c *ginGonic.Context) {
 			c.Writer.WriteHeader(204)
