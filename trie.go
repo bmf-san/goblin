@@ -139,7 +139,7 @@ func (t *Tree) Search(method string, path string) (http.HandlerFunc, *Params, er
 	}
 
 	if curNode.handler == nil {
-		return nil, nil, errors.New("handler is not regsitered")
+		return nil, nil, errors.New("handler is not registered")
 	}
 
 	return curNode.handler, &params, nil
