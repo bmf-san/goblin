@@ -276,7 +276,6 @@ func TestSearch(t *testing.T) {
 		},
 	}
 
-	// HACK: add more test cases.
 	for _, c := range cases {
 		handler, params, err := tree.Search(c.item.method, c.item.path)
 
