@@ -13,7 +13,7 @@ func main() {
 	r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
-	r.GET(`/foo/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo")
 	}))
 	r.GET(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -38,5 +38,5 @@ func main() {
 		fmt.Fprintf(w, "/foo/%v/%v", id, name)
 	}))
 
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe(":9999", r)
 }

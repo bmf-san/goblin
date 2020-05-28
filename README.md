@@ -43,14 +43,14 @@ You can use named parameters like this.
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/foo/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     id := goblin.GetParam(r.Context(), "id")
-    fmt.Fprintf(w, "/foo/%v/", id)
+    fmt.Fprintf(w, "/foo/%v", id)
 }))
 
-r.POST(`/foo/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.POST(`/foo/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     name := goblin.GetParam(r.Context(), "name")
-    fmt.Fprintf(w, "/foo/%v/", name)
+    fmt.Fprintf(w, "/foo/%v", name)
 }))
 ```
 
@@ -60,9 +60,9 @@ You can also use named parameter with regular expression like this.
 `[name:pattern]`
 
 ```go
-r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     id := goblin.GetParam(r.Context(), "id")
-    fmt.Fprintf(w, "/foo/%v/", id)
+    fmt.Fprintf(w, "/foo/%v", id)
 }))
 ```
 
@@ -76,14 +76,14 @@ A routing pattern matching priority depends on an order of routing definition.
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/foo/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, `/foo/:id/`)
+r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `/foo/:id`)
 }))
-r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, `/foo/:id[^\d+$]/`)
+r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `/foo/:id[^\d+$]`)
 }))
 r.GET(`/foo/:id[^\w+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, `/foo/:id[^\w+$]/`)
+    fmt.Fprintf(w, `/foo/:id[^\w+$]`)
 }))
 ```
 
@@ -129,7 +129,7 @@ func main() {
 		fmt.Fprintf(w, "/foo/%v/%v", id, name)
 	}))
 
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe(":9999", r)
 }
 ```
 

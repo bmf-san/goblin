@@ -7,9 +7,7 @@ import (
 )
 
 func TestDeleteEmpty(t *testing.T) {
-	s := strings.Split("/foo/bar/baz", "/")
-
-	actual := deleteEmpty(s)
+	actual := deleteEmpty(strings.Split("/foo/bar/baz", "/"))
 	expected := []string{"foo", "bar", "baz"}
 
 	if !reflect.DeepEqual(actual, expected) {
