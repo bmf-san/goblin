@@ -130,6 +130,11 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 			// 2 /foo/:id[^\d+$]
 			// 3 /foo/:id[^\w+$]
 			// priority is 1, 2, 3
+			if len(curNode.children) == 0 {
+				return &Result{}, errors.New("handler is not regsitered")
+			}
+
+			count := 0
 			for c := range curNode.children {
 				if string([]rune(c)[0]) == paramDelimiter {
 					ptn := getPattern(c)
@@ -143,17 +148,25 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 						})
 
 						curNode = curNode.children[c]
+						count++
 						break
 					} else {
-						return nil, errors.New("param does not match")
+						return &Result{}, errors.New("param does not match")
 					}
+				}
+
+				count++
+
+				// If no match is found until the last loop.
+				if count == len(curNode.children) {
+					return &Result{}, errors.New("handler is not regsitered")
 				}
 			}
 		}
 	}
 
 	if curNode.handler == nil {
-		return nil, errors.New("handler is not registered")
+		return &Result{}, errors.New("handler is not registered")
 	}
 
 	return &Result{
