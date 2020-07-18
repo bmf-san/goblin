@@ -43,6 +43,11 @@ func (r *Router) DELETE(path string, handler http.HandlerFunc) {
 	r.Handle(http.MethodDelete, path, handler)
 }
 
+// OPTION set a route for OPTION method.
+func (r *Router) OPTION(path string, handler http.HandlerFunc) {
+	r.Handle(http.MethodOptions, path, handler)
+}
+
 // Handle handle a route.
 func (r *Router) Handle(method string, path string, handler http.HandlerFunc) {
 	r.tree.Insert(method, path, handler)

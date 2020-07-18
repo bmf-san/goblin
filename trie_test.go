@@ -35,6 +35,11 @@ func TestNewTree(t *testing.T) {
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
+			http.MethodOptions: &Node{
+				label:    "",
+				handler:  nil,
+				children: make(map[string]*Node),
+			},
 		},
 	}
 
