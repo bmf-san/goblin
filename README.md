@@ -21,7 +21,7 @@ go get -u github.com/bmf-san/goblin
 ## Basic
 goblin supports these http methods.
 
-`GET/POST/PUT/PATCH/DELETE`
+`GET/POST/PUT/PATCH/DELETE/OPTION`
 
 You can define routing like this.
 
@@ -57,7 +57,7 @@ r.POST(`/foo/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Reques
 ## Named parameters with regular expression
 You can also use named parameter with regular expression like this.
 
-`[name:pattern]`
+`:paramName[pattern]`
 
 ```go
 r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,9 +66,7 @@ r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 }))
 ```
 
-A default pattern is wildcard.
-
-`(.+)`
+Since the default pattern is `(.+)`, if you don't define it, then `:id` is defined as `:id[(.+)]`.
 
 ## Note
 A routing pattern matching priority depends on an order of routing definition.
@@ -84,6 +82,18 @@ r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 }))
 r.GET(`/foo/:id[^\w+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\w+$]`)
+}))
+```
+
+If you want to define a route that matches anything, you can define it as follows.
+
+```go
+r := goblin.NewRouter()
+
+// This definition needs to be defined last for the most part. Otherwise, it will not match correctly.
+// Incidentally, this can be used to deal with preflight.
+r.OPTION(`:`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `: metches anything`)
 }))
 ```
 

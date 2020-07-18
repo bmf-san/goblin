@@ -183,7 +183,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 // getPattern get a pattern from a label.
 // ex.
 // :id[^\d+$] → ^\d+$
-// :id        → *
+// :id        → (.+)
 func getPattern(label string) string {
 	leftI := strings.Index(label, leftPtnDelimiter)
 	rightI := strings.Index(label, rightPtnDelimiter)

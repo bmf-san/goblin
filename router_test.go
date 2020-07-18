@@ -27,57 +27,66 @@ func TestRouter(t *testing.T) {
 	r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
-	r.GET(`/foo/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/")
+	r.GET(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/foo")
 	}))
-	r.GET(`/foo/bar/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/bar/")
+	r.GET(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/foo/bar")
 	}))
-	r.GET(`/foo/bar/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/bar/%v/", id)
+		fmt.Fprintf(w, "/foo/bar/%v", id)
 	}))
-	r.GET(`/foo/bar/:id/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := GetParam(r.Context(), "id")
-		name := GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/bar/%v/%v/", id, name)
-	}))
-	r.GET(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/%v/", id)
-	}))
-	r.GET(`/foo/:id[^\d+$]/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		name := GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/%v/%v/", id, name)
+		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
 	}))
-
+	r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := GetParam(r.Context(), "id")
+		fmt.Fprintf(w, "/foo/%v", id)
+	}))
+	r.GET(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := GetParam(r.Context(), "id")
+		name := GetParam(r.Context(), "name")
+		fmt.Fprintf(w, "/foo/%v/%v", id, name)
+	}))
 	r.POST(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
-	r.POST(`/foo/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/")
+	r.POST(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/foo")
 	}))
-	r.POST(`/foo/bar/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/bar/")
+	r.POST(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/foo/bar")
 	}))
-	r.POST(`/foo/bar/:id/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/bar/%v/", id)
+		fmt.Fprintf(w, "/foo/bar/%v", id)
 	}))
-	r.POST(`/foo/bar/:id/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := GetParam(r.Context(), "id")
-		name := GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/bar/%v/%v/", id, name)
-	}))
-	r.POST(`/foo/:id[^\d+$]/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/%v/", id)
-	}))
-	r.POST(`/foo/:id[^\d+$]/:name/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		name := GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/%v/%v/", id, name)
+		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
+	}))
+	r.POST(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := GetParam(r.Context(), "id")
+		fmt.Fprintf(w, "/foo/%v", id)
+	}))
+	r.POST(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := GetParam(r.Context(), "id")
+		name := GetParam(r.Context(), "name")
+		fmt.Fprintf(w, "/foo/%v/%v", id, name)
+	}))
+	r.OPTION(`/option`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/option")
+	}))
+	r.OPTION(`:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := GetParam(r.Context(), "id")
+		fmt.Fprintf(w, "/%v", id)
+	}))
+	r.OPTION(`:`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/preflight")
 	}))
 
 	cases := []struct {
@@ -93,40 +102,40 @@ func TestRouter(t *testing.T) {
 			body:   "/",
 		},
 		{
-			path:   "/foo/",
+			path:   "/foo",
 			method: http.MethodGet,
 			code:   http.StatusOK,
-			body:   "/foo/",
+			body:   "/foo",
 		},
 		{
-			path:   "/foo/bar/",
+			path:   "/foo/bar",
 			method: http.MethodGet,
 			code:   http.StatusOK,
-			body:   "/foo/bar/",
+			body:   "/foo/bar",
 		},
 		{
-			path:   "/foo/bar/123/",
+			path:   "/foo/bar/123",
 			method: http.MethodGet,
 			code:   http.StatusOK,
-			body:   "/foo/bar/123/",
+			body:   "/foo/bar/123",
 		},
 		{
-			path:   "/foo/bar/123/john/",
+			path:   "/foo/bar/123/john",
 			method: http.MethodGet,
 			code:   http.StatusOK,
-			body:   "/foo/bar/123/john/",
+			body:   "/foo/bar/123/john",
 		},
 		{
-			path:   "/foo/123/",
+			path:   "/foo/123",
 			method: http.MethodGet,
 			code:   http.StatusOK,
-			body:   "/foo/123/",
+			body:   "/foo/123",
 		},
 		{
-			path:   "/foo/123/john/",
+			path:   "/foo/123/john",
 			method: http.MethodGet,
 			code:   http.StatusOK,
-			body:   "/foo/123/john/",
+			body:   "/foo/123/john",
 		},
 		{
 			path:   "/",
@@ -135,40 +144,58 @@ func TestRouter(t *testing.T) {
 			body:   "/",
 		},
 		{
-			path:   "/foo/",
+			path:   "/foo",
 			method: http.MethodPost,
 			code:   http.StatusOK,
-			body:   "/foo/",
+			body:   "/foo",
 		},
 		{
-			path:   "/foo/bar/",
+			path:   "/foo/bar",
 			method: http.MethodPost,
 			code:   http.StatusOK,
-			body:   "/foo/bar/",
+			body:   "/foo/bar",
 		},
 		{
-			path:   "/foo/bar/123/",
+			path:   "/foo/bar/123",
 			method: http.MethodPost,
 			code:   http.StatusOK,
-			body:   "/foo/bar/123/",
+			body:   "/foo/bar/123",
 		},
 		{
-			path:   "/foo/bar/123/john/",
+			path:   "/foo/bar/123/john",
 			method: http.MethodPost,
 			code:   http.StatusOK,
-			body:   "/foo/bar/123/john/",
+			body:   "/foo/bar/123/john",
 		},
 		{
-			path:   "/foo/123/",
+			path:   "/foo/123",
 			method: http.MethodPost,
 			code:   http.StatusOK,
-			body:   "/foo/123/",
+			body:   "/foo/123",
 		},
 		{
-			path:   "/foo/123/john/",
+			path:   "/foo/123/john",
 			method: http.MethodPost,
 			code:   http.StatusOK,
-			body:   "/foo/123/john/",
+			body:   "/foo/123/john",
+		},
+		{
+			path:   "/option",
+			method: http.MethodOptions,
+			code:   http.StatusOK,
+			body:   "/option",
+		},
+		{
+			path:   "/1",
+			method: http.MethodOptions,
+			code:   http.StatusOK,
+			body:   "/1",
+		},
+		{
+			path:   "/preflight",
+			method: http.MethodOptions,
+			code:   http.StatusOK,
+			body:   "/preflight",
 		},
 	}
 
