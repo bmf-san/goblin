@@ -46,32 +46,32 @@ const (
 func NewTree() *Tree {
 	return &Tree{
 		method: map[string]*Node{
-			http.MethodGet: &Node{
+			http.MethodGet: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodPost: &Node{
+			http.MethodPost: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodPut: &Node{
+			http.MethodPut: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodPatch: &Node{
+			http.MethodPatch: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodDelete: &Node{
+			http.MethodDelete: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodOptions: &Node{
+			http.MethodOptions: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
