@@ -15,7 +15,7 @@ type Tree struct {
 // Node is a node of tree.
 type Node struct {
 	label    string
-	handler  http.HandlerFunc
+	handler  http.Handler
 	children map[string]*Node
 }
 
@@ -30,7 +30,7 @@ type Params []*Param
 
 // Result is a search result.
 type Result struct {
-	handler http.HandlerFunc
+	handler http.Handler
 	params  Params
 }
 
@@ -81,7 +81,7 @@ func NewTree() *Tree {
 }
 
 // Insert insert a route definition to tree.
-func (t *Tree) Insert(method string, path string, handler http.HandlerFunc) error {
+func (t *Tree) Insert(method string, path string, handler http.Handler) error {
 	curNode := t.method[method]
 
 	if path == pathDelimiter {

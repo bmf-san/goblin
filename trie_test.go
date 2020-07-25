@@ -657,7 +657,7 @@ func TestNegativeSearchRegexp(t *testing.T) {
 	for _, c := range cases {
 		actual, err := tree.Search(c.item.method, c.item.path)
 		if err != nil {
-			if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+			if !(actual.handler == nil && c.expected.handler == nil) && reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
 				t.Errorf("error:%v actual handler:%v actual params:%v expected:%v", err, actual.handler, actual.params, c.expected)
 			}
 
@@ -870,7 +870,7 @@ func TestPositiveAndNegativeSearchRandom(t *testing.T) {
 	for _, c := range cases {
 		actual, err := tree.Search(c.item.method, c.item.path)
 		if err != nil {
-			if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+			if !(actual.handler == nil && c.expected.handler == nil) && reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
 				t.Errorf("error:%v actual handler:%v actual params:%v expected:%v", err, actual.handler, actual.params, c.expected)
 			}
 
@@ -885,7 +885,7 @@ func TestPositiveAndNegativeSearchRandom(t *testing.T) {
 			}
 		}
 
-		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+		if !(actual.handler == nil && c.expected.handler == nil) && reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
 			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
 		}
 
