@@ -2,9 +2,11 @@ package goblin
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // Tree is a trie tree.
@@ -112,6 +114,29 @@ func (t *Tree) Insert(method string, path string, handler http.Handler) error {
 	return nil
 }
 
+type regCache struct {
+	s sync.Map
+}
+
+func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
+	v, ok := rc.s.Load(ptn)
+	if ok {
+		reg, ok := v.(*regexp.Regexp)
+		if !ok {
+			return nil, fmt.Errorf("the value of %q is wrong", ptn)
+		}
+		return reg, nil
+	}
+	reg, err := regexp.Compile(ptn)
+	if err != nil {
+		return nil, err
+	}
+	rc.s.Store(ptn, reg)
+	return reg, nil
+}
+
+var regC = &regCache{}
+
 // Search search a path from a tree.
 func (t *Tree) Search(method string, path string) (*Result, error) {
 	var params Params
@@ -145,7 +170,11 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 					ptn := getPattern(c)
 
 					// HACK: regexp is slow so initialize a pattern as a global variable.
-					if regexp.MustCompile(ptn).Match([]byte(l)) {
+					reg, err := regC.Get(ptn)
+					if err != nil {
+						return nil, err
+					}
+					if reg.Match([]byte(l)) {
 						param := getParameter(c)
 						params = append(params, &Param{
 							key:   param,
