@@ -317,9 +317,9 @@ func init() {
 
 	calcMem("goblin", func() {
 		router := NewRouter()
-		handler := func(w http.ResponseWriter, _ *http.Request) {
+		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(204)
-		}
+		})
 		for _, route := range githubAPI {
 			router.Handle(route.method, route.path, handler)
 		}

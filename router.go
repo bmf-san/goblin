@@ -19,37 +19,37 @@ func NewRouter() *Router {
 }
 
 // GET set a route for GET method.
-func (r *Router) GET(path string, handler http.HandlerFunc) {
+func (r *Router) GET(path string, handler http.Handler) {
 	r.Handle(http.MethodGet, path, handler)
 }
 
 // POST set a route for POST method.
-func (r *Router) POST(path string, handler http.HandlerFunc) {
+func (r *Router) POST(path string, handler http.Handler) {
 	r.Handle(http.MethodPost, path, handler)
 }
 
 // PUT set a route for PUT method.
-func (r *Router) PUT(path string, handler http.HandlerFunc) {
+func (r *Router) PUT(path string, handler http.Handler) {
 	r.Handle(http.MethodPut, path, handler)
 }
 
 // PATCH set a route for PATCH method.
-func (r *Router) PATCH(path string, handler http.HandlerFunc) {
+func (r *Router) PATCH(path string, handler http.Handler) {
 	r.Handle(http.MethodPatch, path, handler)
 }
 
 // DELETE set a route for DELETE method.
-func (r *Router) DELETE(path string, handler http.HandlerFunc) {
+func (r *Router) DELETE(path string, handler http.Handler) {
 	r.Handle(http.MethodDelete, path, handler)
 }
 
 // OPTION set a route for OPTION method.
-func (r *Router) OPTION(path string, handler http.HandlerFunc) {
+func (r *Router) OPTION(path string, handler http.Handler) {
 	r.Handle(http.MethodOptions, path, handler)
 }
 
 // Handle handle a route.
-func (r *Router) Handle(method string, path string, handler http.HandlerFunc) {
+func (r *Router) Handle(method string, path string, handler http.Handler) {
 	r.tree.Insert(method, path, handler)
 }
 
@@ -78,7 +78,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req = req.WithContext(ctx)
 	}
 
-	result.handler(w, req)
+	result.handler.ServeHTTP(w, req)
 }
 
 // GetParam get parameters from request.
