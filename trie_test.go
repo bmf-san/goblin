@@ -10,32 +10,32 @@ func TestNewTree(t *testing.T) {
 	actual := NewTree()
 	expected := &Tree{
 		method: map[string]*Node{
-			http.MethodGet: &Node{
+			http.MethodGet: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodPost: &Node{
+			http.MethodPost: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodPut: &Node{
+			http.MethodPut: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodPatch: &Node{
+			http.MethodPatch: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodDelete: &Node{
+			http.MethodDelete: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
 			},
-			http.MethodOptions: &Node{
+			http.MethodOptions: {
 				label:    "",
 				handler:  nil,
 				children: make(map[string]*Node),
@@ -657,7 +657,7 @@ func TestNegativeSearchRegexp(t *testing.T) {
 	for _, c := range cases {
 		actual, err := tree.Search(c.item.method, c.item.path)
 		if err != nil {
-			if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+			if !(actual.handler == nil && c.expected.handler == nil) && reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
 				t.Errorf("error:%v actual handler:%v actual params:%v expected:%v", err, actual.handler, actual.params, c.expected)
 			}
 
@@ -870,7 +870,7 @@ func TestPositiveAndNegativeSearchRandom(t *testing.T) {
 	for _, c := range cases {
 		actual, err := tree.Search(c.item.method, c.item.path)
 		if err != nil {
-			if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+			if !(actual.handler == nil && c.expected.handler == nil) && reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
 				t.Errorf("error:%v actual handler:%v actual params:%v expected:%v", err, actual.handler, actual.params, c.expected)
 			}
 
@@ -885,7 +885,7 @@ func TestPositiveAndNegativeSearchRandom(t *testing.T) {
 			}
 		}
 
-		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+		if !(actual.handler == nil && c.expected.handler == nil) && reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
 			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
 		}
 
