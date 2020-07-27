@@ -11,44 +11,44 @@ type Router struct {
 	tree *Tree
 }
 
-// NewRouter is a constructor for creating a new Router struct.
+// NewRouter creates a new router.
 func NewRouter() *Router {
 	return &Router{
 		tree: NewTree(),
 	}
 }
 
-// GET set a route for GET method.
+// GET sets a route for GET method.
 func (r *Router) GET(path string, handler http.Handler) {
 	r.Handle(http.MethodGet, path, handler)
 }
 
-// POST set a route for POST method.
+// POST sets a route for POST method.
 func (r *Router) POST(path string, handler http.Handler) {
 	r.Handle(http.MethodPost, path, handler)
 }
 
-// PUT set a route for PUT method.
+// PUT sets a route for PUT method.
 func (r *Router) PUT(path string, handler http.Handler) {
 	r.Handle(http.MethodPut, path, handler)
 }
 
-// PATCH set a route for PATCH method.
+// PATCH sets a route for PATCH method.
 func (r *Router) PATCH(path string, handler http.Handler) {
 	r.Handle(http.MethodPatch, path, handler)
 }
 
-// DELETE set a route for DELETE method.
+// DELETE sets a route for DELETE method.
 func (r *Router) DELETE(path string, handler http.Handler) {
 	r.Handle(http.MethodDelete, path, handler)
 }
 
-// OPTION set a route for OPTION method.
+// OPTION sets a route for OPTION method.
 func (r *Router) OPTION(path string, handler http.Handler) {
 	r.Handle(http.MethodOptions, path, handler)
 }
 
-// Handle handle a route.
+// Handle handles a route.
 func (r *Router) Handle(method string, path string, handler http.Handler) {
 	r.tree.Insert(method, path, handler)
 }
@@ -81,7 +81,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	result.handler.ServeHTTP(w, req)
 }
 
-// GetParam get parameters from request.
+// GetParam gets parameters from request.
 func GetParam(ctx context.Context, name string) string {
 	params, _ := ctx.Value(ParamsKey).(Params)
 
