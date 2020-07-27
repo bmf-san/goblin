@@ -44,7 +44,7 @@ const (
 	ptnWildcard       = "(.+)"
 )
 
-// NewTree is create a new trie tree.
+// NewTree creates a new trie tree.
 func NewTree() *Tree {
 	return &Tree{
 		method: map[string]*Node{
@@ -82,7 +82,7 @@ func NewTree() *Tree {
 	}
 }
 
-// Insert insert a route definition to tree.
+// Insert inserts a route definition to tree.
 func (t *Tree) Insert(method string, path string, handler http.Handler) error {
 	curNode := t.method[method]
 
@@ -118,6 +118,7 @@ type regCache struct {
 	s sync.Map
 }
 
+// Get gets a compiled regexp from cache or create it.
 func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 	v, ok := rc.s.Load(ptn)
 	if ok {
@@ -137,7 +138,7 @@ func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 
 var regC = &regCache{}
 
-// Search search a path from a tree.
+// Search searchs a path from a tree.
 func (t *Tree) Search(method string, path string) (*Result, error) {
 	var params Params
 
@@ -169,7 +170,6 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 				if string([]rune(c)[0]) == paramDelimiter {
 					ptn := getPattern(c)
 
-					// HACK: regexp is slow so initialize a pattern as a global variable.
 					reg, err := regC.Get(ptn)
 					if err != nil {
 						return nil, err
@@ -209,7 +209,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 	}, nil
 }
 
-// getPattern get a pattern from a label.
+// getPattern gets a pattern from a label.
 // ex.
 // :id[^\d+$] → ^\d+$
 // :id        → (.+)
@@ -225,7 +225,7 @@ func getPattern(label string) string {
 	return label[leftI+1 : rightI]
 }
 
-// getParameter get a parameter from a label.
+// getParameter gets a parameter from a label.
 // ex.
 // :id[^\d+$] → id
 // :id        → id
