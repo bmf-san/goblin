@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/beego/mux"
+	"github.com/bmf-san/goblin"
 	"github.com/dimfeld/httptreemux"
 	ginGonic "github.com/gin-gonic/gin"
 	goChi "github.com/go-chi/chi"
@@ -287,12 +288,12 @@ var githubAPI = []route{
 }
 
 var (
-	goblin     http.Handler
-	beegoMux   http.Handler
-	httpRouter http.Handler
-	treeMux    http.Handler
-	gin        *ginGonic.Engine
-	chi        *goChi.Mux
+	goblinRouter http.Handler
+	beegoMux     http.Handler
+	httpRouter   http.Handler
+	treeMux      http.Handler
+	gin          *ginGonic.Engine
+	chi          *goChi.Mux
 )
 
 func calcMem(name string, load func()) {
@@ -316,14 +317,14 @@ func init() {
 	println("GithubAPI Routes:", len(githubAPI))
 
 	calcMem("goblin", func() {
-		router := NewRouter()
+		router := goblin.NewRouter()
 		handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.WriteHeader(204)
 		})
 		for _, route := range githubAPI {
 			router.Handle(route.method, route.path, handler)
 		}
-		goblin = router
+		goblinRouter = router
 	})
 
 	calcMem("beego-mux", func() {
@@ -437,7 +438,7 @@ func benchRequests(b *testing.B, router http.Handler, routes []route) {
 
 // Benchmark routes
 func BenchmarkGoblin(b *testing.B) {
-	benchRoutes(b, goblin, githubAPI)
+	benchRoutes(b, goblinRouter, githubAPI)
 }
 
 func BenchmarkBeegoMux(b *testing.B) {
@@ -462,7 +463,7 @@ func BenchmarkChi(b *testing.B) {
 
 // Benchmark requests
 func BenchmarkGoblinRequests(b *testing.B) {
-	benchRequests(b, goblin, githubAPI)
+	benchRequests(b, goblinRouter, githubAPI)
 }
 
 func BenchmarkBeegoMuxRequests(b *testing.B) {
