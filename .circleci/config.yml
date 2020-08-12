@@ -1,6 +1,6 @@
 references: &golang-image
     docker:
-      - image: circleci/golang:1.13
+      - image: golang:1.15-alpine
     working_directory: /go/src/github.com/goblin
 version: 2
 jobs:
@@ -28,10 +28,10 @@ jobs:
                 go get -u golang.org/x/lint/golint && golint ./...
         - run:
             name: Run vet
-            command: go vet ./...
+            command: CGO_ENABLED=0 go vet ./...
         - run:
             name: Run tests
-            command: go test -v ./...
+            command: CGO_ENABLED=0 go test -v ./...
 
 workflows:
     version: 2
