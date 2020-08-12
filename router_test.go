@@ -85,9 +85,6 @@ func TestRouter(t *testing.T) {
 		id := GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/%v", id)
 	}))
-	r.OPTION(`:`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/preflight")
-	}))
 
 	cases := []struct {
 		path   string
@@ -190,12 +187,6 @@ func TestRouter(t *testing.T) {
 			method: http.MethodOptions,
 			code:   http.StatusOK,
 			body:   "/1",
-		},
-		{
-			path:   "/preflight",
-			method: http.MethodOptions,
-			code:   http.StatusOK,
-			body:   "/preflight",
 		},
 	}
 

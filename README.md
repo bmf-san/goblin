@@ -85,18 +85,6 @@ r.GET(`/foo/:id[^\w+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 }))
 ```
 
-If you want to define a route that matches anything, you can define it as follows.
-
-```go
-r := goblin.NewRouter()
-
-// This definition needs to be defined last for the most part. Otherwise, it will not match correctly.
-// Incidentally, this can be used to deal with preflight.
-r.OPTION(`:`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, `: metches anything`)
-}))
-```
-
 # Examples
 ```go
 package main
