@@ -211,7 +211,8 @@ goblin based on trie tree structure.
 ![trie](https://user-images.githubusercontent.com/13291041/79637833-34089080-81bd-11ea-8af4-f0f3f7c2fedc.png)
 
 # Contribution
-Please take a look at our [CONTRIBUTING.md](https://github.com/bmf-san/goblin/blob/master/CONTRIBUTING.md) file.
+We are always accepting issues, pull requests, and other requests and questions.
+We look forward to your contribution！
 
 # License
 This project is licensed under the terms of the MIT license.
