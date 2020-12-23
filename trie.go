@@ -138,7 +138,7 @@ func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 
 var regC = &regCache{}
 
-// Search searchs a path from a tree.
+// Search searches a path from a tree.
 func (t *Tree) Search(method string, path string) (*Result, error) {
 	var params Params
 
@@ -162,7 +162,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 			// 3 /foo/:id[^\w+$]
 			// priority is 1, 2, 3
 			if len(curNode.children) == 0 {
-				return &Result{}, errors.New("handler is not regsitered")
+				return &Result{}, errors.New("handler is not registered")
 			}
 
 			count := 0
@@ -193,7 +193,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 
 				// If no match is found until the last loop.
 				if count == len(curNode.children) {
-					return &Result{}, errors.New("handler is not regsitered")
+					return &Result{}, errors.New("handler is not registered")
 				}
 			}
 		}
