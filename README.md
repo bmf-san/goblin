@@ -154,7 +154,7 @@ Run a total of 203 routes of GithubAPI.
 - [go-chi/chi](https://github.com/go-chi/chi)
 
 ## How to run
-```go
+```sh
 cd benchmark
 go test -bench . -benchmem
 ```
