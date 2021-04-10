@@ -166,7 +166,8 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 			}
 
 			count := 0
-			for c := range curNode.children {
+			cc := curNode.children
+			for c := range cc {
 				if string([]rune(c)[0]) == paramDelimiter {
 					ptn := getPattern(c)
 
@@ -181,7 +182,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 							value: l,
 						})
 
-						curNode = curNode.children[c]
+						curNode = cc[c]
 						count++
 						break
 					} else {
@@ -192,7 +193,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 				count++
 
 				// If no match is found until the last loop.
-				if count == len(curNode.children) {
+				if count == len(cc) {
 					return &Result{}, errors.New("handler is not registered")
 				}
 			}
