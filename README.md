@@ -135,6 +135,7 @@ If you want to try it, you can use an [_examples](https://github.com/bmf-san/gob
 
 # Benchmark
 ## Environment
+goblin: [1.0.0](https://github.com/bmf-san/goblin/releases/tag/1.1.0)
 Golang version: 1.14
 Model Name: MacBook Air
 Model Identifier: MacBookAir8,1
