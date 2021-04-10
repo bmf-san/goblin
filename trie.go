@@ -217,7 +217,7 @@ func getPattern(label string) string {
 	leftI := strings.Index(label, leftPtnDelimiter)
 	rightI := strings.Index(label, rightPtnDelimiter)
 
-	// if label has not pattern, return wild card pattern as default.
+	// if label doesn't have any pattern, return wild card pattern as default.
 	if leftI == -1 || rightI == -1 {
 		return ptnWildcard
 	}
