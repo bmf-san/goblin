@@ -75,12 +75,6 @@ type Expected struct {
 	params   Params
 }
 
-func TestSearchPriority(t *testing.T) {
-	// tree := NewTree()
-
-	// TODO: write later
-}
-
 func TestSearchAllMethod(t *testing.T) {
 	tree := NewTree()
 
@@ -107,105 +101,105 @@ func TestSearchAllMethod(t *testing.T) {
 	tree.Insert(http.MethodDelete, `/foo`, fooDeleteHandler)
 
 	cases := []struct {
-		item     Item
-		expected Expected
+		item     *Item
+		expected *Expected
 	}{
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootGetHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooGetHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodPost,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootPostHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodPost,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooPostHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodPut,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootPutHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodPut,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooPutHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodPatch,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootPatchHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodPatch,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooPatchHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodDelete,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootDeleteHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodDelete,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooDeleteHandler,
 				params:  Params{},
 			},
@@ -240,25 +234,25 @@ func TestSearchWithoutRoot(t *testing.T) {
 	tree.Insert(http.MethodGet, "/bar", barHandler)
 
 	cases := []struct {
-		item     Item
-		expected Expected
+		item     *Item
+		expected *Expected
 	}{
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: barHandler,
 				params:  Params{},
 			},
@@ -297,75 +291,75 @@ func TestSearchTrailingSlash(t *testing.T) {
 	tree.Insert(http.MethodGet, "/foo/bar/", fooBarHandler)
 
 	cases := []struct {
-		item     Item
-		expected Expected
+		item     *Item
+		expected *Expected
 	}{
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/bar/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: barHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: barHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/bar/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooBarHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooBarHandler,
 				params:  Params{},
 			},
@@ -398,51 +392,51 @@ func TestSearchStaticPath(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", fooHandler)
+	tree.Insert(http.MethodGet, "/", rootHandler)
 	tree.Insert(http.MethodGet, "/foo", fooHandler)
-	tree.Insert(http.MethodGet, "/bar", fooHandler)
-	tree.Insert(http.MethodGet, "/foo/bar", fooHandler)
+	tree.Insert(http.MethodGet, "/bar", barHandler)
+	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler)
 
 	cases := []struct {
-		item     Item
-		expected Expected
+		item     *Item
+		expected *Expected
 	}{
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: barHandler,
 				params:  Params{},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooBarHandler,
 				params:  Params{},
 			},
@@ -479,15 +473,15 @@ func TestSearchPathWithParams(t *testing.T) {
 	tree.Insert(http.MethodGet, `/foo/:id/:name/:date`, fooIDNameDateHandler)
 
 	cases := []struct {
-		item     Item
-		expected Expected
+		item     *Item
+		expected *Expected
 	}{
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/1",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooIDHandler,
 				params: Params{
 					&Param{
@@ -498,11 +492,11 @@ func TestSearchPathWithParams(t *testing.T) {
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/1/john",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooIDNameHandler,
 				params: Params{
 					&Param{
@@ -517,11 +511,11 @@ func TestSearchPathWithParams(t *testing.T) {
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/1/john/2020",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: fooIDNameDateHandler,
 				params: Params{
 					&Param{
@@ -559,10 +553,138 @@ func TestSearchPathWithParams(t *testing.T) {
 	}
 }
 
+func TestSearchPriority(t *testing.T) {
+	tree := NewTree()
+
+	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	rootPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	IDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	IDPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+
+	tree.Insert(http.MethodGet, "/", rootHandler)
+	tree.Insert(http.MethodGet, "/", rootPriorityHandler)
+	tree.Insert(http.MethodGet, "/foo", fooHandler)
+	tree.Insert(http.MethodGet, "/foo", fooPriorityHandler)
+	tree.Insert(http.MethodGet, "/:id", IDHandler)
+	tree.Insert(http.MethodGet, "/:id", IDPriorityHandler)
+
+	cases := []struct {
+		hasError bool
+		item     *Item
+		expected *Expected
+	}{
+		{
+			hasError: true,
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/",
+			},
+			expected: &Expected{
+				handler: rootHandler,
+				params:  Params{},
+			},
+		},
+		{
+			hasError: false,
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/",
+			},
+			expected: &Expected{
+				handler: rootPriorityHandler,
+				params:  Params{},
+			},
+		},
+		{
+			hasError: true,
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/foo",
+			},
+			expected: &Expected{
+				handler: fooHandler,
+				params:  Params{},
+			},
+		},
+		{
+			hasError: false,
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/foo",
+			},
+			expected: &Expected{
+				handler: fooPriorityHandler,
+				params:  Params{},
+			},
+		},
+		{
+			hasError: true,
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/bar",
+			},
+			expected: &Expected{
+				handler: IDHandler,
+				params:  Params{},
+			},
+		},
+		{
+			hasError: false,
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/1",
+			},
+			expected: &Expected{
+				handler: IDPriorityHandler,
+				params: Params{
+					&Param{
+						key:   "id",
+						value: "1",
+					},
+				},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		actual, err := tree.Search(c.item.method, c.item.path)
+		if c.hasError {
+			if reflect.ValueOf(actual.handler) == reflect.ValueOf(c.expected.handler) {
+				t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			}
+
+			for i, param := range actual.params {
+				if !reflect.DeepEqual(param, c.expected.params[i]) {
+					t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+				}
+			}
+
+			return
+		}
+
+		if err != nil {
+			t.Errorf("err: %v actual: %v expected: %v\n", err, actual, c.expected)
+		}
+
+		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+		}
+
+		for i, param := range actual.params {
+			if !reflect.DeepEqual(param, c.expected.params[i]) {
+				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+	}
+}
+
 func TestSearchRegexp(t *testing.T) {
 	tree := NewTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	rootWildCardHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -571,6 +693,7 @@ func TestSearchRegexp(t *testing.T) {
 	fooBarIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	tree.Insert(http.MethodGet, "/", rootHandler)
+	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler)
 	tree.Insert(http.MethodGet, "/foo", fooHandler)
 	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]`, fooIDHandler)
 	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler)
@@ -601,6 +724,38 @@ func TestSearchRegexp(t *testing.T) {
 				path:   "/",
 			},
 			expected: nil,
+		},
+		{
+			hasError: false,
+			item: &Item{
+				method: http.MethodOptions,
+				path:   "/wildcard",
+			},
+			expected: &Expected{
+				handler: rootWildCardHandler,
+				params: Params{
+					&Param{
+						key:   "*",
+						value: "wildcard",
+					},
+				},
+			},
+		},
+		{
+			hasError: false,
+			item: &Item{
+				method: http.MethodOptions,
+				path:   "/1234",
+			},
+			expected: &Expected{
+				handler: rootWildCardHandler,
+				params: Params{
+					&Param{
+						key:   "*",
+						value: "1234",
+					},
+				},
+			},
 		},
 		{
 			hasError: false,
@@ -765,25 +920,25 @@ func TestSearchCORS(t *testing.T) {
 	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler)
 
 	cases := []struct {
-		item     Item
-		expected Expected
+		item     *Item
+		expected *Expected
 	}{
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodOptions,
 				path:   "/",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootHandler,
 				params:  Params{nil},
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodOptions,
 				path:   "/wildcard",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootWildCardHandler,
 				params: Params{
 					&Param{
@@ -794,11 +949,11 @@ func TestSearchCORS(t *testing.T) {
 			},
 		},
 		{
-			item: Item{
+			item: &Item{
 				method: http.MethodOptions,
 				path:   "/1234",
 			},
-			expected: Expected{
+			expected: &Expected{
 				handler: rootWildCardHandler,
 				params: Params{
 					&Param{

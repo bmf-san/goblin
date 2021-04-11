@@ -71,6 +71,8 @@ Since the default pattern is `(.+)`, if you don't define it, then `:id` is defin
 ## Note
 A routing pattern matching priority depends on an order of routing definition.
 
+The one defined earlier takes precedence over the one defined later.
+
 ```go
 r := goblin.NewRouter()
 
