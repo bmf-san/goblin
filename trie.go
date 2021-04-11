@@ -159,14 +159,15 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 			// ex.
 			// 1 /foo/:id
 			// 2 /foo/:id[^\d+$]
-			// 3 /foo/:id[^\w+$]
+			// 3 /foo/:id[^\D+$]
 			// priority is 1, 2, 3
 			if len(curNode.children) == 0 {
 				return &Result{}, errors.New("handler is not registered")
 			}
 
 			count := 0
-			for c := range curNode.children {
+			cc := curNode.children
+			for c := range cc {
 				if string([]rune(c)[0]) == paramDelimiter {
 					ptn := getPattern(c)
 
@@ -181,7 +182,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 							value: l,
 						})
 
-						curNode = curNode.children[c]
+						curNode = cc[c]
 						count++
 						break
 					} else {
@@ -192,7 +193,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 				count++
 
 				// If no match is found until the last loop.
-				if count == len(curNode.children) {
+				if count == len(cc) {
 					return &Result{}, errors.New("handler is not registered")
 				}
 			}
@@ -217,7 +218,7 @@ func getPattern(label string) string {
 	leftI := strings.Index(label, leftPtnDelimiter)
 	rightI := strings.Index(label, rightPtnDelimiter)
 
-	// if label has not pattern, return wild card pattern as default.
+	// if label doesn't have any pattern, return wild card pattern as default.
 	if leftI == -1 || rightI == -1 {
 		return ptnWildcard
 	}

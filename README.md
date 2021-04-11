@@ -71,6 +71,8 @@ Since the default pattern is `(.+)`, if you don't define it, then `:id` is defin
 ## Note
 A routing pattern matching priority depends on an order of routing definition.
 
+The one defined earlier takes precedence over the one defined later.
+
 ```go
 r := goblin.NewRouter()
 
@@ -80,8 +82,8 @@ r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\d+$]`)
 }))
-r.GET(`/foo/:id[^\w+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, `/foo/:id[^\w+$]`)
+r.GET(`/foo/:id[^\D+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `/foo/:id[^\D+$]`)
 }))
 ```
 
@@ -135,6 +137,7 @@ If you want to try it, you can use an [_examples](https://github.com/bmf-san/gob
 
 # Benchmark
 ## Environment
+goblin: [1.0.0](https://github.com/bmf-san/goblin/releases/tag/1.0.0)
 Golang version: 1.14
 Model Name: MacBook Air
 Model Identifier: MacBookAir8,1
