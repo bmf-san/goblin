@@ -159,7 +159,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 			// ex.
 			// 1 /foo/:id
 			// 2 /foo/:id[^\d+$]
-			// 3 /foo/:id[^\w+$]
+			// 3 /foo/:id[^\D+$]
 			// priority is 1, 2, 3
 			if len(curNode.children) == 0 {
 				return &Result{}, errors.New("handler is not registered")

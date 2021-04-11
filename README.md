@@ -80,8 +80,8 @@ r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\d+$]`)
 }))
-r.GET(`/foo/:id[^\w+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, `/foo/:id[^\w+$]`)
+r.GET(`/foo/:id[^\D+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, `/foo/:id[^\D+$]`)
 }))
 ```
 
