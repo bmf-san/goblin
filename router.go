@@ -8,13 +8,15 @@ import (
 
 // Router is a represents the router handling HTTP.
 type Router struct {
-	tree *Tree
+	tree        *Tree
+	middlewares middlewares
 }
 
 // NewRouter creates a new router.
 func NewRouter() *Router {
 	return &Router{
-		tree: NewTree(),
+		tree:        NewTree(),
+		middlewares: []middleware(nil),
 	}
 }
 
@@ -60,6 +62,13 @@ const (
 	ParamsKey key = iota
 )
 
+// Use registers middlewares.
+func (r *Router) Use(mws ...middleware) {
+	for _, m := range mws {
+		r.middlewares = append(r.middlewares, m)
+	}
+}
+
 // ServeHTTP dispatches the request to the handler whose
 // pattern most closely matches the request URL.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -78,7 +87,8 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req = req.WithContext(ctx)
 	}
 
-	result.handler.ServeHTTP(w, req)
+	h := r.middlewares.then(result.handler)
+	h.ServeHTTP(w, req)
 }
 
 // GetParam gets parameters from request.

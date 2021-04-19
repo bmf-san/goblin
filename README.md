@@ -68,6 +68,21 @@ r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Re
 
 Since the default pattern is `(.+)`, if you don't define it, then `:id` is defined as `:id[(.+)]`.
 
+## Middlewares
+// TODO:
+```go
+	r.Use(first, second)
+	r.GET(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "middleware\n")
+		// NOTE: The ouput is as follows.
+		// first: before
+		// second: before
+		// middleware
+		// second: after
+		// first: after
+	}))
+```
+
 ## Note
 A routing pattern matching priority depends on an order of routing definition.
 

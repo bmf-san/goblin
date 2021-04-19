@@ -7,9 +7,28 @@ import (
 	goblin "github.com/bmf-san/goblin"
 )
 
+func first(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "first: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "first: after\n")
+	})
+}
+
+func second(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "second: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "second: after\n")
+	})
+}
+
 func main() {
 	r := goblin.NewRouter()
-
+	r.Use(first, second)
+	r.GET(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "middleware\n")
+	}))
 	r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
@@ -37,6 +56,5 @@ func main() {
 		name := goblin.GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/%v/%v", id, name)
 	}))
-
 	http.ListenAndServe(":9999", r)
 }
