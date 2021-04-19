@@ -7,10 +7,32 @@ import (
 )
 
 func TestDeleteEmpty(t *testing.T) {
-	actual := deleteEmpty(strings.Split("/foo/bar/baz", "/"))
-	expected := []string{"foo", "bar", "baz"}
+	cases := []struct {
+		item     string
+		expected []string
+	}{
+		{
+			item:     "/foo/bar/baz",
+			expected: []string{"foo", "bar", "baz"},
+		},
+		{
+			item:     "/foo/baz",
+			expected: []string{"foo", "baz"},
+		},
+		{
+			item:     "/foo/",
+			expected: []string{"foo"},
+		},
+		{
+			item:     "/",
+			expected: []string(nil),
+		},
+	}
 
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("actual:%v expected:%v", actual, expected)
+	for _, c := range cases {
+		actual := deleteEmpty(strings.Split(c.item, "/"))
+		if !reflect.DeepEqual(actual, c.expected) {
+			t.Errorf("actual:%v expected:%v", actual, c.expected)
+		}
 	}
 }
