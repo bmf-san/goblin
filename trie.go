@@ -16,9 +16,10 @@ type Tree struct {
 
 // Node is a node of tree.
 type Node struct {
-	label    string
-	handler  http.Handler
-	children map[string]*Node
+	label       string
+	handler     http.Handler
+	middlewares middlewares
+	children    map[string]*Node
 }
 
 // Param is parameter.
@@ -32,8 +33,9 @@ type Params []*Param
 
 // Result is a search result.
 type Result struct {
-	handler http.Handler
-	params  Params
+	handler     http.Handler
+	params      Params
+	middlewares middlewares
 }
 
 const (
@@ -83,7 +85,7 @@ func NewTree() *Tree {
 }
 
 // Insert inserts a route definition to tree.
-func (t *Tree) Insert(method string, path string, handler http.Handler) error {
+func (t *Tree) Insert(method string, path string, handler http.Handler, mws middlewares) error {
 	curNode := t.method[method]
 
 	if path == pathDelimiter {
@@ -93,6 +95,7 @@ func (t *Tree) Insert(method string, path string, handler http.Handler) error {
 
 		curNode.label = path
 		curNode.handler = handler
+		curNode.middlewares = mws
 
 		return nil
 	}
@@ -102,9 +105,10 @@ func (t *Tree) Insert(method string, path string, handler http.Handler) error {
 			curNode = nextNode
 		} else {
 			curNode.children[l] = &Node{
-				label:    l,
-				handler:  handler,
-				children: make(map[string]*Node),
+				label:       l,
+				handler:     handler,
+				middlewares: mws,
+				children:    make(map[string]*Node),
 			}
 
 			curNode = curNode.children[l]
@@ -205,8 +209,9 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 	}
 
 	return &Result{
-		handler: curNode.handler,
-		params:  params,
+		handler:     curNode.handler,
+		params:      params,
+		middlewares: curNode.middlewares,
 	}, nil
 }
 

@@ -7,8 +7,12 @@ import (
 // middleware represents the singular of middleware.
 type middleware func(http.Handler) http.Handler
 
-// Middlewares represents the plural of middleware.
+// middlewares represents the plural of middleware.
 type middlewares []middleware
+
+func NewMiddlewares(mws ...middleware) middlewares {
+	return append([]middleware(nil), mws...)
+}
 
 // then executes middlewares.
 func (mws middlewares) then(h http.Handler) http.Handler {
