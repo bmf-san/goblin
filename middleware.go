@@ -10,7 +10,7 @@ type middleware func(http.Handler) http.Handler
 // middlewares represents the plural of middleware.
 type middlewares []middleware
 
-func NewMiddlewares(mws ...middleware) middlewares {
+func NewMiddlewares(mws middlewares) middlewares {
 	return append([]middleware(nil), mws...)
 }
 

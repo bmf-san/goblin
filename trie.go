@@ -118,6 +118,7 @@ func (t *Tree) Insert(method string, path string, handler http.Handler, mws midd
 	return nil
 }
 
+// regCache represents the cache for a regular expression.
 type regCache struct {
 	s sync.Map
 }
