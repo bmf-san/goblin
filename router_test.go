@@ -21,67 +21,97 @@ func TestNewRouter(t *testing.T) {
 	}
 }
 
+func first(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "first: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "first: after\n")
+	})
+}
+
+func second(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "second: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "second: after\n")
+	})
+}
+
+func third(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "third: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "third: after\n")
+	})
+}
+
 func TestRouter(t *testing.T) {
 	r := NewRouter()
 
-	r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
-	r.GET(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/middleware`).Use(first).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/middleware\n")
+	}))
+	r.GET(`/middlewares`).Use(first, second, third).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/middlewares\n")
+	}))
+	r.GET(`/foo`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo")
 	}))
-	r.GET(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/bar`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo/bar")
 	}))
-	r.GET(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/bar/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/foo/bar/%v", id)
 	}))
-	r.GET(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/bar/:id/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		name := GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
 	}))
-	r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/foo/%v", id)
 	}))
-	r.GET(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.GET(`/foo/:id[^\d+$]/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		name := GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/%v/%v", id, name)
 	}))
-	r.POST(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
-	r.POST(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo")
 	}))
-	r.POST(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo/bar`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo/bar")
 	}))
-	r.POST(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo/bar/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/foo/bar/%v", id)
 	}))
-	r.POST(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo/bar/:id/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		name := GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
 	}))
-	r.POST(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/foo/%v", id)
 	}))
-	r.POST(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.POST(`/foo/:id[^\d+$]/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		name := GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/%v/%v", id, name)
 	}))
-	r.OPTION(`/option`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.OPTION(`/option`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/option")
 	}))
-	r.OPTION(`:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.OPTION(`:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/%v", id)
 	}))
@@ -97,6 +127,18 @@ func TestRouter(t *testing.T) {
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/",
+		},
+		{
+			path:   "/middleware",
+			method: http.MethodGet,
+			code:   http.StatusOK,
+			body:   "first: before\n/middleware\nfirst: after\n",
+		},
+		{
+			path:   "/middlewares",
+			method: http.MethodGet,
+			code:   http.StatusOK,
+			body:   "first: before\nsecond: before\nthird: before\n/middlewares\nthird: after\nsecond: after\nfirst: after\n",
 		},
 		{
 			path:   "/foo",
