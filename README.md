@@ -106,6 +106,8 @@ goblin supports middlewares.
 
 You can be able to set one or more middlewares.
 
+There is no problem even if you do not set the middleware.
+
 ```go
 func first(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
