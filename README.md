@@ -182,7 +182,7 @@ See [_examples](https://github.com/bmf-san/goblin/blob/master/_examples).
 | Memory                | 16 GB                                                         |
 
 ## Test targets
-Run a total of 203 routes of GithubAPI.
+Run a total of 203 static routes of GithubAPI.
 
 - [beego/mux](https://github.com/beego/mux)
 - [julienschmidt/httprouter](https://github.com/julienschmidt/httprouter)
@@ -197,33 +197,34 @@ go test -bench . -benchmem
 ```
 
 ## Results
-Date: Mon Jul 27 23:27:31 JST 2020
+Date: Wed May  5 14:29:31 JST 2021
 
 ```
 GithubAPI Routes: 203
-   goblin: 62768 Bytes
-   beego-mux: 108224 Bytes
-   HttpRouter: 37096 Bytes
+   goblin: 72376 Bytes
+   beego-mux: 107328 Bytes
+   HttpRouter: 37088 Bytes
    httptreemux: 78800 Bytes
-   gin: 59128 Bytes
+   gin: 59824 Bytes
    chi: 71528 Bytes
 goos: darwin
 goarch: amd64
 pkg: github.com/bmf-san/goblin/benchmark
-BenchmarkGoblin-4                           1035            999689 ns/op         1056674 B/op       3455 allocs/op
-BenchmarkBeegoMux-4                         1431            823894 ns/op         1142024 B/op       3475 allocs/op
-BenchmarkHttpRouter-4                       1533            702788 ns/op         1021037 B/op       2603 allocs/op
-BenchmarkHttpTreeMux-4                      1510            790050 ns/op         1073112 B/op       3108 allocs/op
-BenchmarkGin-4                              1674            739079 ns/op         1007579 B/op       2438 allocs/op
-BenchmarkChi-4                              1452            868848 ns/op         1095208 B/op       3047 allocs/op
-BenchmarkGoblinRequests-4                     57          20326844 ns/op          883953 B/op      11220 allocs/op
-BenchmarkBeegoMuxRequests-4                   50          23407305 ns/op          969482 B/op      11241 allocs/op
-BenchmarkHttpRouterRequests-4                 51          24262251 ns/op          848098 B/op      10369 allocs/op
-BenchmarkHttpTreeMuxRequests-4                50          20983605 ns/op          900222 B/op      10872 allocs/op
-BenchmarkHttpGinRequests-4                    48          21747666 ns/op          834644 B/op      10202 allocs/op
-BenchmarkHttpChiRequests-4                    55          21271806 ns/op          922561 B/op      10813 allocs/op
+cpu: Intel(R) Core(TM) i5-8210Y CPU @ 1.60GHz
+BenchmarkGoblin-4                           1251            915417 ns/op         1066201 B/op       3455 allocs/op
+BenchmarkBeegoMux-4                         1148            971825 ns/op         1147724 B/op       3475 allocs/op
+BenchmarkHttpRouter-4                       1178            908059 ns/op         1024065 B/op       2603 allocs/op
+BenchmarkHttpTreeMux-4                      1078            951108 ns/op         1076140 B/op       3108 allocs/op
+BenchmarkGin-4                              1502            726655 ns/op         1010564 B/op       2438 allocs/op
+BenchmarkChi-4                              1422            877377 ns/op         1101487 B/op       3047 allocs/op
+BenchmarkGoblinRequests-4                     50          22033687 ns/op          895916 B/op      11223 allocs/op
+BenchmarkBeegoMuxRequests-4                   58          20948914 ns/op          976484 B/op      11240 allocs/op
+BenchmarkHttpRouterRequests-4                 57          19581280 ns/op          852574 B/op      10368 allocs/op
+BenchmarkHttpTreeMuxRequests-4                57          21062096 ns/op          904856 B/op      10873 allocs/op
+BenchmarkHttpGinRequests-4                    56          20573872 ns/op          839000 B/op      10202 allocs/op
+BenchmarkHttpChiRequests-4                    54          20863902 ns/op          930313 B/op      10811 allocs/op
 PASS
-ok      github.com/bmf-san/goblin/benchmark     24.316sts-4                    45          22363389 ns/op          921963 B/op      10811 allocs/op
+ok      github.com/bmf-san/goblin/benchmark     24.648s
 ```
 
 # Router design

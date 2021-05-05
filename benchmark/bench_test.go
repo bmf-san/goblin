@@ -322,7 +322,20 @@ func init() {
 			w.WriteHeader(204)
 		})
 		for _, route := range githubAPI {
-			router.Handle(route.method, route.path, handler)
+			switch route.method {
+			case "GET":
+				router.GET(route.path).Handler(handler)
+			case "POST":
+				router.POST(route.path).Handler(handler)
+			case "PUT":
+				router.PUT(route.path).Handler(handler)
+			case "PATCH":
+				router.PATCH(route.path).Handler(handler)
+			case "DELETE":
+				router.DELETE(route.path).Handler(handler)
+			default:
+				panic("Unknown HTTP method: " + route.method)
+			}
 		}
 		goblinRouter = router
 	})
