@@ -1,6 +1,10 @@
 # goblin
+[![GitHub release](https://img.shields.io/github/release/bmf-san/goblin.svg)](https://github.com/bmf-san/goblin/releases)
 [![CircleCI](https://circleci.com/gh/bmf-san/goblin/tree/master.svg?style=svg)](https://circleci.com/gh/bmf-san/goblin/tree/master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bmf-san/goblin)](https://goreportcard.com/report/github.com/bmf-san/goblin)
 [![GitHub license](https://img.shields.io/github/license/bmf-san/goblin)](https://github.com/bmf-san/goblin/blob/master/LICENSE)
+[![Go Reference](https://pkg.go.dev/badge/github.com/bmf-san/goblin.svg)](https://pkg.go.dev/github.com/bmf-san/goblin)
+[![Sourcegraph](https://sourcegraph.com/github.com/bmf-san/goblin/-/badge.svg)](https://sourcegraph.com/github.com/bmf-san/goblin?badge)
 
 A golang http router based on trie tree.
 
@@ -10,7 +14,8 @@ A golang http router based on trie tree.
 - Lightweight
 - Fully compatible with net/http
 - No external dependencies
-- Support named parameters with an optional regular expression.
+- Support named parameters with an optional regular expression
+- Support middlewares
 
 # Install
 ```sh
@@ -23,52 +28,19 @@ goblin supports these http methods.
 
 `GET/POST/PUT/PATCH/DELETE/OPTION`
 
-You can define routing like this.
+You can define routing as follows.
 
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "/")
-}))
+})
 
-r.POST(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "/")
-}))
+http.ListenAndServe(":9999", r)
 ```
 
-## Named parameters
-You can use named parameters like this.
-
-```go
-r := goblin.NewRouter()
-
-r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    id := goblin.GetParam(r.Context(), "id")
-    fmt.Fprintf(w, "/foo/%v", id)
-}))
-
-r.POST(`/foo/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    name := goblin.GetParam(r.Context(), "name")
-    fmt.Fprintf(w, "/foo/%v", name)
-}))
-```
-
-## Named parameters with regular expression
-You can also use named parameter with regular expression like this.
-
-`:paramName[pattern]`
-
-```go
-r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    id := goblin.GetParam(r.Context(), "id")
-    fmt.Fprintf(w, "/foo/%v", id)
-}))
-```
-
-Since the default pattern is `(.+)`, if you don't define it, then `:id` is defined as `:id[(.+)]`.
-
-## Note
+## Matching priority
 A routing pattern matching priority depends on an order of routing definition.
 
 The one defined earlier takes precedence over the one defined later.
@@ -76,76 +48,136 @@ The one defined earlier takes precedence over the one defined later.
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id`)
 }))
-r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\d+$]`)
 }))
-r.GET(`/foo/:id[^\D+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id[^\D+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\D+$]`)
 }))
+
+http.ListenAndServe(":9999", r)
+```
+
+In the above case, when accessing `/foo/1`, it matches the routing defined first.
+
+So it doesn't match the 2nd and 3rd defined routings.
+
+
+## Named parameters
+goblin supports named parameters as follows.
+
+```go
+r := goblin.NewRouter()
+
+r.GET(`/foo/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := goblin.GetParam(r.Context(), "id")
+    fmt.Fprintf(w, "/foo/%v", id)
+}))
+
+r.POST(`/foo/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    name := goblin.GetParam(r.Context(), "name")
+    fmt.Fprintf(w, "/foo/%v", name)
+}))
+
+http.ListenAndServe(":9999", r)
+```
+
+If you use the named parameters without regular expression as in the above case, it is internally interpreted as a wildcard (`(.+)`) regular expression.
+
+So `:id` is substantially defined as `:id[(.+)]` internaly.
+
+## Named parameters with regular expression
+You can also use named parameter with regular expression as follows.
+
+`:paramName[pattern]`
+
+```go
+r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := goblin.GetParam(r.Context(), "id")
+    fmt.Fprintf(w, "/foo/%v", id)
+}))
+```
+
+## Middlewares
+goblin supports middlewares.
+
+You can be able to set one or more middlewares.
+
+```go
+func first(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "first: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "first: after\n")
+	})
+}
+
+func second(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "second: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "second: after\n")
+	})
+}
+
+func third(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "third: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "third: after\n")
+	})
+}
+
+```
+
+```go
+r := goblin.NewRouter()
+
+r.GET(`/middleware`).Use(first).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "middleware\n")
+}))
+r.GET(`/middlewares`).Use(second, third).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "middlewares\n")
+}))
+
+http.ListenAndServe(":9999", r)
+```
+
+In the above case, accessing `/middleware` will produce ouput similar to the following:
+
+```
+first: before
+middleware
+first: after
+```
+
+Accessing `/middlewares` will produce ouput similar to the following:
+```
+second: before
+third: before
+middlewares
+third: after
+second: after
 ```
 
 # Examples
-```go
-package main
-
-import (
-	"fmt"
-	"net/http"
-
-	goblin "github.com/bmf-san/goblin"
-)
-
-func main() {
-	r := goblin.NewRouter()
-
-	r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/")
-	}))
-	r.GET(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo")
-	}))
-	r.GET(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/bar")
-	}))
-	r.GET(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/bar/%v", id)
-	}))
-	r.GET(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		name := goblin.GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
-	}))
-	r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/%v", id)
-	}))
-	r.GET(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		name := goblin.GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/%v/%v", id, name)
-	}))
-
-	http.ListenAndServe(":9999", r)
-}
-```
-
-If you want to try it, you can use an [_examples](https://github.com/bmf-san/goblin/blob/master/_examples).
+See [_examples](https://github.com/bmf-san/goblin/blob/master/_examples).
 
 # Benchmark
 ## Environment
-goblin: [1.0.0](https://github.com/bmf-san/goblin/releases/tag/1.0.0)
-Golang version: 1.14
-Model Name: MacBook Air
-Model Identifier: MacBookAir8,1
-Processor Name: Dual-Core Intel Core i5
-Processor Speed: 1.6 GHz
-Number of Processors: 1
-Total Number of Cores: 2
-Memory: 16 GB
+|          key          |                             value                             |
+| --------------------- | ------------------------------------------------------------- |
+| version               | [1.0.0](https://github.com/bmf-san/goblin/releases/tag/1.0.0) |
+| Model Name            | MacBook Air                                                   |
+| Model Identifier      | MacBookAir8,1                                                 |
+| Processor Name        | Dual-Core Intel Core i5                                       |
+| Processor Speed       | 1.6 GHz                                                       |
+| Number of Processors  | 1                                                             |
+| Total Number of Cores | 2                                                             |
+| Memory                | 16 GB                                                         |
 
 ## Test targets
 Run a total of 203 routes of GithubAPI.
@@ -203,6 +235,7 @@ goblin based on trie tree structure.
 
 # Contribution
 We are always accepting issues, pull requests, and other requests and questions.
+
 We look forward to your contribution！
 
 # License

@@ -53,11 +53,12 @@ func TestInsert(t *testing.T) {
 
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	if err := tree.Insert(http.MethodGet, "/", fooHandler); err != nil {
+	// TODO: Middleware考慮
+	if err := tree.Insert(http.MethodGet, "/", fooHandler, nil); err != nil {
 		t.Errorf("err: %v\n", err)
 	}
 
-	if err := tree.Insert(http.MethodGet, "/foo", fooHandler); err != nil {
+	if err := tree.Insert(http.MethodGet, "/foo", fooHandler, nil); err != nil {
 		t.Errorf("err: %v\n", err)
 	}
 }
@@ -89,16 +90,16 @@ func TestSearchAllMethod(t *testing.T) {
 	rootDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootGetHandler)
-	tree.Insert(http.MethodGet, "/foo", fooGetHandler)
-	tree.Insert(http.MethodPost, "/", rootPostHandler)
-	tree.Insert(http.MethodPost, "/foo", fooPostHandler)
-	tree.Insert(http.MethodPut, "/", rootPutHandler)
-	tree.Insert(http.MethodPut, "/foo", fooPutHandler)
-	tree.Insert(http.MethodPatch, `/`, rootPatchHandler)
-	tree.Insert(http.MethodPatch, `/foo`, fooPatchHandler)
-	tree.Insert(http.MethodDelete, `/`, rootDeleteHandler)
-	tree.Insert(http.MethodDelete, `/foo`, fooDeleteHandler)
+	tree.Insert(http.MethodGet, "/", rootGetHandler, nil)
+	tree.Insert(http.MethodGet, "/foo", fooGetHandler, nil)
+	tree.Insert(http.MethodPost, "/", rootPostHandler, nil)
+	tree.Insert(http.MethodPost, "/foo", fooPostHandler, nil)
+	tree.Insert(http.MethodPut, "/", rootPutHandler, nil)
+	tree.Insert(http.MethodPut, "/foo", fooPutHandler, nil)
+	tree.Insert(http.MethodPatch, `/`, rootPatchHandler, nil)
+	tree.Insert(http.MethodPatch, `/foo`, fooPatchHandler, nil)
+	tree.Insert(http.MethodDelete, `/`, rootDeleteHandler, nil)
+	tree.Insert(http.MethodDelete, `/foo`, fooDeleteHandler, nil)
 
 	cases := []struct {
 		item     *Item
@@ -230,8 +231,8 @@ func TestSearchWithoutRoot(t *testing.T) {
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/foo", fooHandler)
-	tree.Insert(http.MethodGet, "/bar", barHandler)
+	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
+	tree.Insert(http.MethodGet, "/bar", barHandler, nil)
 
 	cases := []struct {
 		item     *Item
@@ -285,10 +286,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler)
-	tree.Insert(http.MethodGet, "/foo/", fooHandler)
-	tree.Insert(http.MethodGet, "/bar/", barHandler)
-	tree.Insert(http.MethodGet, "/foo/bar/", fooBarHandler)
+	tree.Insert(http.MethodGet, "/", rootHandler, nil)
+	tree.Insert(http.MethodGet, "/foo/", fooHandler, nil)
+	tree.Insert(http.MethodGet, "/bar/", barHandler, nil)
+	tree.Insert(http.MethodGet, "/foo/bar/", fooBarHandler, nil)
 
 	cases := []struct {
 		item     *Item
@@ -392,10 +393,10 @@ func TestSearchStaticPath(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler)
-	tree.Insert(http.MethodGet, "/foo", fooHandler)
-	tree.Insert(http.MethodGet, "/bar", barHandler)
-	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler)
+	tree.Insert(http.MethodGet, "/", rootHandler, nil)
+	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
+	tree.Insert(http.MethodGet, "/bar", barHandler, nil)
+	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, nil)
 
 	cases := []struct {
 		item     *Item
@@ -468,9 +469,9 @@ func TestSearchPathWithParams(t *testing.T) {
 	fooIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooIDNameDateHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, `/foo/:id`, fooIDHandler)
-	tree.Insert(http.MethodGet, `/foo/:id/:name`, fooIDNameHandler)
-	tree.Insert(http.MethodGet, `/foo/:id/:name/:date`, fooIDNameDateHandler)
+	tree.Insert(http.MethodGet, `/foo/:id`, fooIDHandler, nil)
+	tree.Insert(http.MethodGet, `/foo/:id/:name`, fooIDNameHandler, nil)
+	tree.Insert(http.MethodGet, `/foo/:id/:name/:date`, fooIDNameDateHandler, nil)
 
 	cases := []struct {
 		item     *Item
@@ -563,12 +564,12 @@ func TestSearchPriority(t *testing.T) {
 	IDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	IDPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler)
-	tree.Insert(http.MethodGet, "/", rootPriorityHandler)
-	tree.Insert(http.MethodGet, "/foo", fooHandler)
-	tree.Insert(http.MethodGet, "/foo", fooPriorityHandler)
-	tree.Insert(http.MethodGet, "/:id", IDHandler)
-	tree.Insert(http.MethodGet, "/:id", IDPriorityHandler)
+	tree.Insert(http.MethodGet, "/", rootHandler, nil)
+	tree.Insert(http.MethodGet, "/", rootPriorityHandler, nil)
+	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
+	tree.Insert(http.MethodGet, "/foo", fooPriorityHandler, nil)
+	tree.Insert(http.MethodGet, "/:id", IDHandler, nil)
+	tree.Insert(http.MethodGet, "/:id", IDPriorityHandler, nil)
 
 	cases := []struct {
 		hasError bool
@@ -692,14 +693,14 @@ func TestSearchRegexp(t *testing.T) {
 	fooBarIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler)
-	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler)
-	tree.Insert(http.MethodGet, "/foo", fooHandler)
-	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]`, fooIDHandler)
-	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler)
-	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler)
-	tree.Insert(http.MethodGet, `/foo/bar/:id`, fooBarIDHandler)
-	tree.Insert(http.MethodGet, `/foo/bar/:id/:name`, fooBarIDNameHandler)
+	tree.Insert(http.MethodGet, "/", rootHandler, nil)
+	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, nil)
+	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
+	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]`, fooIDHandler, nil)
+	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler, nil)
+	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, nil)
+	tree.Insert(http.MethodGet, `/foo/bar/:id`, fooBarIDHandler, nil)
+	tree.Insert(http.MethodGet, `/foo/bar/:id/:name`, fooBarIDNameHandler, nil)
 
 	cases := []struct {
 		hasError bool
@@ -916,8 +917,8 @@ func TestSearchCORS(t *testing.T) {
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootWildCardHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodOptions, `/`, rootHandler)
-	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler)
+	tree.Insert(http.MethodOptions, `/`, rootHandler, nil)
+	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, nil)
 
 	cases := []struct {
 		item     *Item
@@ -1003,36 +1004,6 @@ func TestGetPattern(t *testing.T) {
 		{
 			actual:   getPattern(`:id`),
 			expected: ptnWildcard,
-		},
-	}
-
-	for _, c := range cases {
-		if c.actual != c.expected {
-			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
-		}
-	}
-}
-
-func TestGetParameter(t *testing.T) {
-	cases := []struct {
-		actual   string
-		expected string
-	}{
-		{
-			actual:   getParameter(`:id[^\d+$]`),
-			expected: "id",
-		},
-		{
-			actual:   getParameter(`:id[`),
-			expected: "id",
-		},
-		{
-			actual:   getParameter(`:id]`),
-			expected: "id]",
-		},
-		{
-			actual:   getParameter(`:id`),
-			expected: "id",
 		},
 	}
 

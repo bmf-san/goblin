@@ -6,10 +6,20 @@ import (
 	"net/http"
 )
 
-// Router is a represents the router handling HTTP.
+// Router represents the router which handles routing.
 type Router struct {
 	tree *Tree
 }
+
+// route represents the route which has data for a routing.
+type route struct {
+	method      string
+	path        string
+	handler     http.Handler
+	middlewares middlewares
+}
+
+var tmpRoute = &route{}
 
 // NewRouter creates a new router.
 func NewRouter() *Router {
@@ -18,54 +28,72 @@ func NewRouter() *Router {
 	}
 }
 
+// Use sets middlewares.
+func (r *Router) Use(mws ...middleware) *Router {
+	nm := NewMiddlewares(mws)
+	tmpRoute.middlewares = nm
+	return r
+}
+
 // GET sets a route for GET method.
-func (r *Router) GET(path string, handler http.Handler) {
-	r.Handle(http.MethodGet, path, handler)
+func (r *Router) GET(path string) *Router {
+	tmpRoute.method = http.MethodGet
+	tmpRoute.path = path
+	return r
 }
 
 // POST sets a route for POST method.
-func (r *Router) POST(path string, handler http.Handler) {
-	r.Handle(http.MethodPost, path, handler)
+func (r *Router) POST(path string) *Router {
+	tmpRoute.method = http.MethodPost
+	tmpRoute.path = path
+	return r
 }
 
 // PUT sets a route for PUT method.
-func (r *Router) PUT(path string, handler http.Handler) {
-	r.Handle(http.MethodPut, path, handler)
+func (r *Router) PUT(path string) *Router {
+	tmpRoute.method = http.MethodPut
+	tmpRoute.path = path
+	return r
 }
 
 // PATCH sets a route for PATCH method.
-func (r *Router) PATCH(path string, handler http.Handler) {
-	r.Handle(http.MethodPatch, path, handler)
+func (r *Router) PATCH(path string) *Router {
+	tmpRoute.method = http.MethodPatch
+	tmpRoute.path = path
+	return r
 }
 
 // DELETE sets a route for DELETE method.
-func (r *Router) DELETE(path string, handler http.Handler) {
-	r.Handle(http.MethodDelete, path, handler)
+func (r *Router) DELETE(path string) *Router {
+	tmpRoute.method = http.MethodDelete
+	tmpRoute.path = path
+	return r
 }
 
 // OPTION sets a route for OPTION method.
-func (r *Router) OPTION(path string, handler http.Handler) {
-	r.Handle(http.MethodOptions, path, handler)
+func (r *Router) OPTION(path string) *Router {
+	tmpRoute.method = http.MethodOptions
+	tmpRoute.path = path
+	return r
+}
+
+// Handler sets a handler.
+func (r *Router) Handler(handler http.Handler) {
+	tmpRoute.handler = handler
+	r.Handle()
 }
 
 // Handle handles a route.
-func (r *Router) Handle(method string, path string, handler http.Handler) {
-	r.tree.Insert(method, path, handler)
+func (r *Router) Handle() {
+	r.tree.Insert(tmpRoute.method, tmpRoute.path, tmpRoute.handler, tmpRoute.middlewares)
+	tmpRoute = &route{}
 }
-
-type key int
-
-const (
-	// ParamsKey is the key in a request context.
-	ParamsKey key = iota
-)
 
 // ServeHTTP dispatches the request to the handler whose
 // pattern most closely matches the request URL.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	path := req.URL.Path
-
 	result, err := r.tree.Search(method, path)
 
 	if err != nil {
@@ -78,18 +106,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		req = req.WithContext(ctx)
 	}
 
-	result.handler.ServeHTTP(w, req)
-}
+	h := result.handler
 
-// GetParam gets parameters from request.
-func GetParam(ctx context.Context, name string) string {
-	params, _ := ctx.Value(ParamsKey).(Params)
-
-	for i := range params {
-		if params[i].key == name {
-			return params[i].value
-		}
+	if result.middlewares != nil {
+		h = result.middlewares.then(result.handler)
 	}
 
-	return ""
+	h.ServeHTTP(w, req)
 }
