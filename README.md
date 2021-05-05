@@ -1,6 +1,10 @@
 # goblin
+[![GitHub release](https://img.shields.io/github/release/bmf-san/goblin.svg)](https://github.com/bmf-san/goblin/releases)
 [![CircleCI](https://circleci.com/gh/bmf-san/goblin/tree/master.svg?style=svg)](https://circleci.com/gh/bmf-san/goblin/tree/master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bmf-san/goblin)](https://goreportcard.com/report/github.com/bmf-san/goblin)
 [![GitHub license](https://img.shields.io/github/license/bmf-san/goblin)](https://github.com/bmf-san/goblin/blob/master/LICENSE)
+[![Go Reference](https://pkg.go.dev/badge/github.com/bmf-san/goblin.svg)](https://pkg.go.dev/github.com/bmf-san/goblin)
+[![Sourcegraph](https://sourcegraph.com/github.com/bmf-san/goblin/-/badge.svg)](https://sourcegraph.com/github.com/bmf-san/goblin?badge)
 
 A golang http router based on trie tree.
 
@@ -26,19 +30,17 @@ goblin supports these http methods.
 
 You can define routing as follows.
 
-// TODO: 以下アップデート
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "/")
-}), nil)
+})
 
-r.POST(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "/")
-}), nil)
+http.ListenAndServe(":9999", r)
 ```
 
+## Matching priority
 A routing pattern matching priority depends on an order of routing definition.
 
 The one defined earlier takes precedence over the one defined later.
@@ -46,33 +48,46 @@ The one defined earlier takes precedence over the one defined later.
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id`)
-}), nil)
-r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+}))
+r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\d+$]`)
-}), nil)
-r.GET(`/foo/:id[^\D+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+}))
+r.GET(`/foo/:id[^\D+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\D+$]`)
-}), nil)
+}))
+
+http.ListenAndServe(":9999", r)
 ```
 
+In the above case, when accessing `/foo/1`, it matches the routing defined first.
+
+So it doesn't match the 2nd and 3rd defined routings.
+
+
 ## Named parameters
-goblin supports named parameters as follows
+goblin supports named parameters as follows.
 
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     id := goblin.GetParam(r.Context(), "id")
     fmt.Fprintf(w, "/foo/%v", id)
-}), nil)
+}))
 
-r.POST(`/foo/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.POST(`/foo/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     name := goblin.GetParam(r.Context(), "name")
     fmt.Fprintf(w, "/foo/%v", name)
-}), nil)
+}))
+
+http.ListenAndServe(":9999", r)
 ```
+
+If you use the named parameters without regular expression as in the above case, it is internally interpreted as a wildcard (`(.+)`) regular expression.
+
+So `:id` is substantially defined as `:id[(.+)]` internaly.
 
 ## Named parameters with regular expression
 You can also use named parameter with regular expression as follows.
@@ -80,43 +95,72 @@ You can also use named parameter with regular expression as follows.
 `:paramName[pattern]`
 
 ```go
-r.GET(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     id := goblin.GetParam(r.Context(), "id")
     fmt.Fprintf(w, "/foo/%v", id)
-}), nil)
+}))
 ```
-
-Since the default pattern is `(.+)`, if you don't define it, then `:id` is defined as `:id[(.+)]`.
 
 ## Middlewares
 goblin supports middlewares.
 
-Middlewares can be set for each routing.
+You can be able to set one or more middlewares.
 
 ```go
 func first(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "first: before\n")
-        next.ServeHTTP(w, r)
-        fmt.Fprintf(w, "first: after\n")
-    })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "first: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "first: after\n")
+	})
 }
 
 func second(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(w, "second: before\n")
-        next.ServeHTTP(w, r)
-        fmt.Fprintf(w, "second: after\n")
-    })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "second: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "second: after\n")
+	})
 }
+
+func third(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "third: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "third: after\n")
+	})
+}
+
 ```
 
 ```go
 r := goblin.NewRouter()
-mws := goblin.NewMiddlewares(first, second)
-r.GET(`/middlewares`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+r.GET(`/middleware`).Use(first).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "middleware\n")
-}), mws)
+}))
+r.GET(`/middlewares`).Use(second, third).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "middlewares\n")
+}))
+
+http.ListenAndServe(":9999", r)
+```
+
+In the above case, accessing `/middleware` will produce ouput similar to the following:
+
+```
+first: before
+middleware
+first: after
+```
+
+Accessing `/middlewares` will produce ouput similar to the following:
+```
+second: before
+third: before
+middlewares
+third: after
+second: after
 ```
 
 # Examples
