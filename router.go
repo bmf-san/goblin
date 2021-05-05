@@ -89,13 +89,6 @@ func (r *Router) Handle() {
 	tmpRoute = &route{}
 }
 
-type key int
-
-const (
-	// ParamsKey is the key in a request context.
-	ParamsKey key = iota
-)
-
 // ServeHTTP dispatches the request to the handler whose
 // pattern most closely matches the request URL.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -120,17 +113,4 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	h.ServeHTTP(w, req)
-}
-
-// GetParam gets parameters from request.
-func GetParam(ctx context.Context, name string) string {
-	params, _ := ctx.Value(ParamsKey).(Params)
-
-	for i := range params {
-		if params[i].key == name {
-			return params[i].value
-		}
-	}
-
-	return ""
 }

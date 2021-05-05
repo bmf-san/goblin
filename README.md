@@ -26,6 +26,7 @@ goblin supports these http methods.
 
 You can define routing as follows.
 
+// TODO: 以下アップデート
 ```go
 r := goblin.NewRouter()
 
