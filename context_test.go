@@ -1,27 +1,35 @@
 package goblin
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
-func TestGetParameter(t *testing.T) {
+func TestGetParam(t *testing.T) {
+	params := &Params{
+		&Param{
+			key:   "id",
+			value: "123",
+		},
+		&Param{
+			key:   "name",
+			value: "john",
+		},
+	}
+
+	ctx := context.WithValue(context.Background(), ParamsKey, *params)
+
 	cases := []struct {
 		actual   string
 		expected string
 	}{
 		{
-			actual:   getParameter(`:id[^\d+$]`),
-			expected: "id",
+			actual:   GetParam(ctx, "id"),
+			expected: "123",
 		},
 		{
-			actual:   getParameter(`:id[`),
-			expected: "id",
-		},
-		{
-			actual:   getParameter(`:id]`),
-			expected: "id]",
-		},
-		{
-			actual:   getParameter(`:id`),
-			expected: "id",
+			actual:   GetParam(ctx, "name"),
+			expected: "john",
 		},
 	}
 

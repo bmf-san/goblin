@@ -95,21 +95,25 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	path := req.URL.Path
 	result, err := r.tree.Search(method, path)
-
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`"Access %s: %s"`, path, err), http.StatusNotImplemented)
 		return
-	}
-
-	if result.params != nil {
-		ctx := context.WithValue(req.Context(), ParamsKey, result.params)
-		req = req.WithContext(ctx)
 	}
 
 	h := result.handler
 
 	if result.middlewares != nil {
 		h = result.middlewares.then(result.handler)
+	}
+
+	if result.method != method {
+		http.Error(w, fmt.Sprintf(`"Access %s: %s"`, path, err), http.StatusNotFound)
+		return
+	}
+
+	if result.params != nil {
+		ctx := context.WithValue(req.Context(), ParamsKey, result.params)
+		req = req.WithContext(ctx)
 	}
 
 	h.ServeHTTP(w, req)
