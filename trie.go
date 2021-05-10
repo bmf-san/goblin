@@ -11,13 +11,13 @@ import (
 
 // Tree is a trie tree.
 type Tree struct {
-	method map[string]*Node
+	node *Node
 }
 
 // Node is a node of tree.
 type Node struct {
 	label       string
-	handler     http.Handler
+	actions     map[string]http.Handler // key: method value: handler
 	middlewares middlewares
 	children    map[string]*Node
 }
@@ -36,67 +36,38 @@ type Result struct {
 	handler     http.Handler
 	params      Params
 	middlewares middlewares
+	method      string
 }
 
 const (
-	pathDelimiter     = "/"
-	paramDelimiter    = ":"
-	leftPtnDelimiter  = "["
-	rightPtnDelimiter = "]"
-	ptnWildcard       = "(.+)"
+	pathRoot          string = "/"
+	pathDelimiter     string = "/"
+	paramDelimiter    string = ":"
+	leftPtnDelimiter  string = "["
+	rightPtnDelimiter string = "]"
+	ptnWildcard       string = "(.+)"
 )
 
 // NewTree creates a new trie tree.
 func NewTree() *Tree {
 	return &Tree{
-		method: map[string]*Node{
-			http.MethodGet: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodPost: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodPut: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodPatch: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodDelete: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodOptions: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
+		node: &Node{
+			label:       pathRoot,
+			actions:     make(map[string]http.Handler),
+			middlewares: nil,
+			children:    make(map[string]*Node),
 		},
 	}
 }
 
 // Insert inserts a route definition to tree.
 func (t *Tree) Insert(method string, path string, handler http.Handler, mws middlewares) error {
-	curNode := t.method[method]
+	curNode := t.node
 
-	if path == pathDelimiter {
-		if len(curNode.label) != 0 && curNode.handler == nil {
-			return errors.New("Root node already exists")
-		}
-
+	if path == pathRoot {
 		curNode.label = path
-		curNode.handler = handler
+		curNode.actions[method] = handler
 		curNode.middlewares = mws
-
 		return nil
 	}
 
@@ -106,14 +77,18 @@ func (t *Tree) Insert(method string, path string, handler http.Handler, mws midd
 		} else {
 			curNode.children[l] = &Node{
 				label:       l,
-				handler:     handler,
+				actions:     make(map[string]http.Handler),
 				middlewares: mws,
 				children:    make(map[string]*Node),
 			}
+			curNode.children[l].actions[method] = handler
 
 			curNode = curNode.children[l]
 		}
 	}
+	curNode.label = path
+	curNode.actions[method] = handler
+	curNode.middlewares = mws
 
 	return nil
 }
@@ -147,11 +122,7 @@ var regC = &regCache{}
 func (t *Tree) Search(method string, path string) (*Result, error) {
 	var params Params
 
-	n := t.method[method]
-
-	if len(n.label) == 0 && len(n.children) == 0 {
-		return nil, errors.New("tree is empty")
-	}
+	n := t.node
 
 	label := deleteEmpty(strings.Split(path, pathDelimiter))
 	curNode := n
@@ -160,17 +131,6 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 		if nextNode, ok := curNode.children[l]; ok {
 			curNode = nextNode
 		} else {
-			// pattern matching priority depends on an order of routing definition
-			// ex.
-			// 1 /foo/:id
-			// 2 /foo/:id[^\d+$]
-			// 3 /foo/:id[^\D+$]
-			// priority is 1, 2, 3
-			if len(curNode.children) == 0 {
-				return &Result{}, errors.New("handler is not registered")
-			}
-
-			count := 0
 			cc := curNode.children
 			for c := range cc {
 				if string([]rune(c)[0]) == paramDelimiter {
@@ -181,38 +141,32 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 						return nil, err
 					}
 					if reg.Match([]byte(l)) {
-						param := getParameter(c)
+						param := getParamName(c)
 						params = append(params, &Param{
 							key:   param,
 							value: l,
 						})
 
 						curNode = cc[c]
-						count++
 						break
 					} else {
 						return &Result{}, errors.New("param does not match")
 					}
 				}
-
-				count++
-
-				// If no match is found until the last loop.
-				if count == len(cc) {
-					return &Result{}, errors.New("handler is not registered")
-				}
 			}
 		}
 	}
 
-	if curNode.handler == nil {
+	handler := curNode.actions[method]
+	if handler == nil {
 		return &Result{}, errors.New("handler is not registered")
 	}
 
 	return &Result{
-		handler:     curNode.handler,
+		handler:     curNode.actions[method],
 		params:      params,
 		middlewares: curNode.middlewares,
+		method:      method,
 	}, nil
 }
 
@@ -232,11 +186,11 @@ func getPattern(label string) string {
 	return label[leftI+1 : rightI]
 }
 
-// getParameter gets a parameter from a label.
+// getParamName gets a parameter from a label.
 // ex.
 // :id[^\d+$] → id
 // :id        → id
-func getParameter(label string) string {
+func getParamName(label string) string {
 	leftI := strings.Index(label, paramDelimiter)
 	rightI := func(l string) int {
 		r := []rune(l)
@@ -269,4 +223,15 @@ func deleteEmpty(s []string) []string {
 		}
 	}
 	return r
+}
+
+// findStrInSlice find a method in slice.
+func findStrInSlice(s []string, needle string) (string, error) {
+	for _, v := range s {
+		if v == needle {
+			return v, nil
+		}
+	}
+
+	return "", errors.New("method is not found")
 }

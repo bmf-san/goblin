@@ -1,7 +1,6 @@
 package goblin
 
 import (
-	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -238,49 +237,14 @@ func TestRouter(t *testing.T) {
 
 		r.ServeHTTP(rec, req)
 
-		if c.code != rec.Code {
-			t.Errorf("path:%v code:%v body:%v rec.Code:%v", c.path, c.code, c.body, rec.Code)
+		if rec.Code != c.code {
+			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
 		}
 
 		recBody, _ := ioutil.ReadAll(rec.Body)
 		body := string(recBody)
-		if c.body != body {
-			t.Errorf("path:%v code:%v body:%v rec.Body:%v", c.path, c.code, c.body, body)
-		}
-	}
-}
-
-func TestGetParam(t *testing.T) {
-	params := &Params{
-		&Param{
-			key:   "id",
-			value: "123",
-		},
-		&Param{
-			key:   "name",
-			value: "john",
-		},
-	}
-
-	ctx := context.WithValue(context.Background(), ParamsKey, *params)
-
-	cases := []struct {
-		actual   string
-		expected string
-	}{
-		{
-			actual:   GetParam(ctx, "id"),
-			expected: "123",
-		},
-		{
-			actual:   GetParam(ctx, "name"),
-			expected: "john",
-		},
-	}
-
-	for _, c := range cases {
-		if c.actual != c.expected {
-			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
+		if body != c.body {
+			t.Errorf("actual: %v expected: %v\n", body, c.body)
 		}
 	}
 }

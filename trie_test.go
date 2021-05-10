@@ -1,45 +1,21 @@
 package goblin
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 )
 
 func TestNewTree(t *testing.T) {
 	actual := NewTree()
 	expected := &Tree{
-		method: map[string]*Node{
-			http.MethodGet: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodPost: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodPut: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodPatch: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodDelete: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
-			http.MethodOptions: {
-				label:    "",
-				handler:  nil,
-				children: make(map[string]*Node),
-			},
+		node: &Node{
+			label:       pathRoot,
+			actions:     make(map[string]http.Handler),
+			middlewares: nil,
+			children:    make(map[string]*Node),
 		},
 	}
 
@@ -51,15 +27,92 @@ func TestNewTree(t *testing.T) {
 func TestInsert(t *testing.T) {
 	tree := NewTree()
 
-	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-
-	// TODO: Middleware考慮
-	if err := tree.Insert(http.MethodGet, "/", fooHandler, nil); err != nil {
-		t.Errorf("err: %v\n", err)
+	first := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "first: before\n")
+			next.ServeHTTP(w, r)
+			fmt.Fprintf(w, "first: after\n")
+		})
 	}
 
-	if err := tree.Insert(http.MethodGet, "/foo", fooHandler, nil); err != nil {
-		t.Errorf("err: %v\n", err)
+	second := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "second: before\n")
+			next.ServeHTTP(w, r)
+			fmt.Fprintf(w, "second: after\n")
+		})
+	}
+
+	third := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, "third: before\n")
+			next.ServeHTTP(w, r)
+			fmt.Fprintf(w, "third: after\n")
+		})
+	}
+
+	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+
+	cases := []struct {
+		method      string
+		path        string
+		handler     http.Handler
+		middlewares middlewares
+	}{
+		{
+			method:      http.MethodGet,
+			path:        "/",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+		{
+			method:      http.MethodPost,
+			path:        "/",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+		{
+			method:      http.MethodGet,
+			path:        "/foo",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+		{
+			method:      http.MethodPost,
+			path:        "/foo",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+		{
+			method:      http.MethodGet,
+			path:        "/foo/bar",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+		{
+			method:      http.MethodPost,
+			path:        "/foo/bar",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+		{
+			method:      http.MethodGet,
+			path:        "/foo/bar/baz",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+		{
+			method:      http.MethodPost,
+			path:        "/foo/bar/baz",
+			handler:     fooHandler,
+			middlewares: []middleware{first, second, third},
+		},
+	}
+
+	for _, c := range cases {
+		if err := tree.Insert(c.method, c.path, c.handler, c.middlewares); err != nil {
+			t.Errorf("err: %v\n", err)
+		}
 	}
 }
 
@@ -911,7 +964,7 @@ func TestSearchRegexp(t *testing.T) {
 	}
 }
 
-func TestSearchCORS(t *testing.T) {
+func TestSearchWildCardRegexp(t *testing.T) {
 	tree := NewTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -1010,6 +1063,112 @@ func TestGetPattern(t *testing.T) {
 	for _, c := range cases {
 		if c.actual != c.expected {
 			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
+		}
+	}
+}
+
+func TestGetParamName(t *testing.T) {
+	cases := []struct {
+		actual   string
+		expected string
+	}{
+		{
+			actual:   getParamName(`:id[^\d+$]`),
+			expected: "id",
+		},
+		{
+			actual:   getParamName(`:id[`),
+			expected: "id",
+		},
+		{
+			actual:   getParamName(`:id]`),
+			expected: "id]",
+		},
+		{
+			actual:   getParamName(`:id`),
+			expected: "id",
+		},
+	}
+
+	for _, c := range cases {
+		if c.actual != c.expected {
+			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
+		}
+	}
+}
+
+func TestDeleteEmpty(t *testing.T) {
+	cases := []struct {
+		actual   []string
+		expected []string
+	}{
+		{
+			actual:   deleteEmpty(strings.Split("/", pathDelimiter)),
+			expected: nil,
+		},
+		{
+			actual:   deleteEmpty(strings.Split("/foo", pathDelimiter)),
+			expected: []string{"foo"},
+		},
+		{
+			actual:   deleteEmpty(strings.Split("/foo/bar", pathDelimiter)),
+			expected: []string{"foo", "bar"},
+		},
+		{
+			actual:   deleteEmpty(strings.Split("/foo/bar/baz", pathDelimiter)),
+			expected: []string{"foo", "bar", "baz"},
+		},
+	}
+
+	for _, c := range cases {
+		if !reflect.DeepEqual(c.actual, c.expected) {
+			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
+		}
+	}
+}
+
+func TestFindStrInSlice(t *testing.T) {
+	cases := []struct {
+		item     []string
+		needle   string
+		expected string
+		hasError bool
+	}{
+		{
+			item:     []string{http.MethodGet},
+			needle:   http.MethodGet,
+			expected: http.MethodGet,
+			hasError: false,
+		},
+		{
+			item:     []string{http.MethodGet, http.MethodPost, http.MethodDelete},
+			needle:   http.MethodPost,
+			expected: http.MethodPost,
+			hasError: false,
+		},
+		{
+			item:     []string{http.MethodGet, http.MethodPost, http.MethodDelete},
+			needle:   http.MethodOptions,
+			expected: "",
+			hasError: true,
+		},
+		{
+			item:     []string{},
+			needle:   http.MethodOptions,
+			expected: "",
+			hasError: true,
+		},
+	}
+
+	for _, c := range cases {
+		actual, err := findStrInSlice(c.item, c.needle)
+		if actual != c.expected {
+			t.Errorf("actual:%v expected:%v", actual, c.expected)
+		}
+		if c.hasError {
+			if err == nil {
+				t.Errorf("err: expected err actual: %v", actual)
+			}
 		}
 	}
 }

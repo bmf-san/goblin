@@ -24,7 +24,7 @@ go get -u github.com/bmf-san/goblin
 
 # Usage
 ## Basic
-goblin supports these http methods.
+Goblin supports these http methods.
 
 `GET/POST/PUT/PATCH/DELETE/OPTION`
 
@@ -197,12 +197,12 @@ go test -bench . -benchmem
 ```
 
 ## Results
-Date: Wed May  5 14:29:31 JST 2021
+Date: Mon May 10 22:42:43 JST 2021
 
 ```
 GithubAPI Routes: 203
-   goblin: 72376 Bytes
-   beego-mux: 107328 Bytes
+   goblin: 72184 Bytes
+   beego-mux: 110408 Bytes
    HttpRouter: 37088 Bytes
    httptreemux: 78800 Bytes
    gin: 59824 Bytes
@@ -211,30 +211,42 @@ goos: darwin
 goarch: amd64
 pkg: github.com/bmf-san/goblin/benchmark
 cpu: Intel(R) Core(TM) i5-8210Y CPU @ 1.60GHz
-BenchmarkGoblin-4                           1251            915417 ns/op         1066201 B/op       3455 allocs/op
-BenchmarkBeegoMux-4                         1148            971825 ns/op         1147724 B/op       3475 allocs/op
-BenchmarkHttpRouter-4                       1178            908059 ns/op         1024065 B/op       2603 allocs/op
-BenchmarkHttpTreeMux-4                      1078            951108 ns/op         1076140 B/op       3108 allocs/op
-BenchmarkGin-4                              1502            726655 ns/op         1010564 B/op       2438 allocs/op
-BenchmarkChi-4                              1422            877377 ns/op         1101487 B/op       3047 allocs/op
-BenchmarkGoblinRequests-4                     50          22033687 ns/op          895916 B/op      11223 allocs/op
-BenchmarkBeegoMuxRequests-4                   58          20948914 ns/op          976484 B/op      11240 allocs/op
-BenchmarkHttpRouterRequests-4                 57          19581280 ns/op          852574 B/op      10368 allocs/op
-BenchmarkHttpTreeMuxRequests-4                57          21062096 ns/op          904856 B/op      10873 allocs/op
-BenchmarkHttpGinRequests-4                    56          20573872 ns/op          839000 B/op      10202 allocs/op
-BenchmarkHttpChiRequests-4                    54          20863902 ns/op          930313 B/op      10811 allocs/op
+BenchmarkGoblin-4                            837           1235383 ns/op         1066204 B/op       3455 allocs/op
+BenchmarkBeegoMux-4                          837           1291392 ns/op         1147724 B/op       3475 allocs/op
+BenchmarkHttpRouter-4                       1110           1089544 ns/op         1024059 B/op       2603 allocs/op
+BenchmarkHttpTreeMux-4                       930           1083137 ns/op         1076140 B/op       3108 allocs/op
+BenchmarkGin-4                               912           1102566 ns/op         1010552 B/op       2438 allocs/op
+BenchmarkChi-4                               892           1571383 ns/op         1101479 B/op       3047 allocs/op
+BenchmarkGoblinRequests-4                     42          37165428 ns/op          895791 B/op      11226 allocs/op
+BenchmarkBeegoMuxRequests-4                   42          30871852 ns/op          977030 B/op      11246 allocs/op
+BenchmarkHttpRouterRequests-4                 40          42418396 ns/op          853732 B/op      10384 allocs/op
+BenchmarkHttpTreeMuxRequests-4                40          32165799 ns/op          904872 B/op      10872 allocs/op
+BenchmarkHttpGinRequests-4                    39          26844252 ns/op          839744 B/op      10212 allocs/op
+BenchmarkHttpChiRequests-4                    45          27507046 ns/op          930594 B/op      10813 allocs/op
 PASS
-ok      github.com/bmf-san/goblin/benchmark     24.648s
+ok      github.com/bmf-san/goblin/benchmark     23.699s
 ```
 
 # Router design
-Router accepts requests and dispatches handlers.
+This is a rough sketch of what the router process.
 
-![architecture](https://user-images.githubusercontent.com/13291041/79637830-30750980-81bd-11ea-8815-93f7cd104499.png)
+As you know, HTTP routers connect paths and handlers based on a protocol called HTTP.
 
-goblin based on trie tree structure.
+<img src="https://user-images.githubusercontent.com/13291041/117673347-af344e80-b1e5-11eb-9b89-1ec616cd74a2.png" width="600"><br>
 
-![trie](https://user-images.githubusercontent.com/13291041/79637833-34089080-81bd-11ea-8af4-f0f3f7c2fedc.png)
+Goblin uses a data structure based on the trie tree.
+
+Goblin internally creates a tree like this when the followin routing is provided:
+
+<img src="https://user-images.githubusercontent.com/13291041/117675621-b3616b80-b1e7-11eb-9c64-8542a0f9c7c2.png" width="600"><br>
+
+<img src="https://user-images.githubusercontent.com/13291041/117675761-d4c25780-b1e7-11eb-9ec7-e78ac0ce142b.png" width="800"><br>
+
+It seems that routers that are more conscious of memory efficiency use a prefix tree (patricia trie), but goblin uses a simple trie tree.
+
+If you want to take a closer look at the tree structure, use a debugger to look at the data structure.
+
+If you find a bug, I would be grateful if you could contribute!
 
 # Contribution
 We are always accepting issues, pull requests, and other requests and questions.
