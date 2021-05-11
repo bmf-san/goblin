@@ -70,8 +70,8 @@ func (r *Router) DELETE(path string) *Router {
 	return r
 }
 
-// OPTION sets a route for OPTION method.
-func (r *Router) OPTION(path string) *Router {
+// OPTIONS sets a route for OPTIONS method.
+func (r *Router) OPTIONS(path string) *Router {
 	tmpRoute.method = http.MethodOptions
 	tmpRoute.path = path
 	return r
@@ -104,11 +104,6 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	if result.middlewares != nil {
 		h = result.middlewares.then(result.handler)
-	}
-
-	if result.method != method {
-		http.Error(w, fmt.Sprintf(`"Access %s: %s"`, path, err), http.StatusNotFound)
-		return
 	}
 
 	if result.params != nil {
