@@ -1,7 +1,6 @@
 package goblin
 
 import (
-	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
@@ -26,31 +25,6 @@ func TestNewTree(t *testing.T) {
 
 func TestInsert(t *testing.T) {
 	tree := NewTree()
-
-	first := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "first: before\n")
-			next.ServeHTTP(w, r)
-			fmt.Fprintf(w, "first: after\n")
-		})
-	}
-
-	second := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "second: before\n")
-			next.ServeHTTP(w, r)
-			fmt.Fprintf(w, "second: after\n")
-		})
-	}
-
-	third := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, "third: before\n")
-			next.ServeHTTP(w, r)
-			fmt.Fprintf(w, "third: after\n")
-		})
-	}
-
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	cases := []struct {
@@ -122,13 +96,6 @@ type Item struct {
 	path   string
 }
 
-// Expected is a set of expected.
-type Expected struct {
-	hasError bool
-	handler  http.HandlerFunc
-	params   Params
-}
-
 func TestSearchAllMethod(t *testing.T) {
 	tree := NewTree()
 
@@ -143,29 +110,30 @@ func TestSearchAllMethod(t *testing.T) {
 	rootDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootGetHandler, nil)
-	tree.Insert(http.MethodGet, "/foo", fooGetHandler, nil)
-	tree.Insert(http.MethodPost, "/", rootPostHandler, nil)
-	tree.Insert(http.MethodPost, "/foo", fooPostHandler, nil)
-	tree.Insert(http.MethodPut, "/", rootPutHandler, nil)
-	tree.Insert(http.MethodPut, "/foo", fooPutHandler, nil)
-	tree.Insert(http.MethodPatch, `/`, rootPatchHandler, nil)
-	tree.Insert(http.MethodPatch, `/foo`, fooPatchHandler, nil)
-	tree.Insert(http.MethodDelete, `/`, rootDeleteHandler, nil)
-	tree.Insert(http.MethodDelete, `/foo`, fooDeleteHandler, nil)
+	tree.Insert(http.MethodGet, "/", rootGetHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo", fooGetHandler, []middleware{first})
+	tree.Insert(http.MethodPost, "/", rootPostHandler, []middleware{first})
+	tree.Insert(http.MethodPost, "/foo", fooPostHandler, []middleware{first})
+	tree.Insert(http.MethodPut, "/", rootPutHandler, []middleware{first})
+	tree.Insert(http.MethodPut, "/foo", fooPutHandler, []middleware{first})
+	tree.Insert(http.MethodPatch, `/`, rootPatchHandler, []middleware{first})
+	tree.Insert(http.MethodPatch, `/foo`, fooPatchHandler, []middleware{first})
+	tree.Insert(http.MethodDelete, `/`, rootDeleteHandler, []middleware{first})
+	tree.Insert(http.MethodDelete, `/foo`, fooDeleteHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootGetHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootGetHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -173,9 +141,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooGetHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooGetHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -183,9 +152,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootPostHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootPostHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -193,9 +163,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooPostHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooPostHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -203,9 +174,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPut,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootPutHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootPutHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -213,9 +185,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPut,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooPutHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooPutHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -223,9 +196,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPatch,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootPatchHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootPatchHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -233,9 +207,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPatch,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooPatchHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooPatchHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -243,9 +218,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodDelete,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootDeleteHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootDeleteHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -253,9 +229,10 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodDelete,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooDeleteHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooDeleteHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 	}
@@ -267,12 +244,26 @@ func TestSearchAllMethod(t *testing.T) {
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
 		}
 
 		for i, param := range actual.params {
 			if !reflect.DeepEqual(param, c.expected.params[i]) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
 			}
 		}
 	}
@@ -284,21 +275,22 @@ func TestSearchWithoutRoot(t *testing.T) {
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
-	tree.Insert(http.MethodGet, "/bar", barHandler, nil)
+	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/bar", barHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -306,9 +298,10 @@ func TestSearchWithoutRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: &Expected{
-				handler: barHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     barHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 	}
@@ -320,12 +313,26 @@ func TestSearchWithoutRoot(t *testing.T) {
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
 		}
 
 		for i, param := range actual.params {
 			if !reflect.DeepEqual(param, c.expected.params[i]) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
 			}
 		}
 	}
@@ -339,23 +346,24 @@ func TestSearchTrailingSlash(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, nil)
-	tree.Insert(http.MethodGet, "/foo/", fooHandler, nil)
-	tree.Insert(http.MethodGet, "/bar/", barHandler, nil)
-	tree.Insert(http.MethodGet, "/foo/bar/", fooBarHandler, nil)
+	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo/", fooHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/bar/", barHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo/bar/", fooBarHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -363,9 +371,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/",
 			},
-			expected: &Expected{
-				handler: fooHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -373,9 +382,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -383,9 +393,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar/",
 			},
-			expected: &Expected{
-				handler: barHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     barHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -393,9 +404,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: &Expected{
-				handler: barHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     barHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -403,9 +415,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/",
 			},
-			expected: &Expected{
-				handler: fooBarHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooBarHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -413,9 +426,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: &Expected{
-				handler: fooBarHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooBarHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 	}
@@ -427,12 +441,26 @@ func TestSearchTrailingSlash(t *testing.T) {
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
 		}
 
 		for i, param := range actual.params {
 			if !reflect.DeepEqual(param, c.expected.params[i]) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
 			}
 		}
 	}
@@ -446,23 +474,24 @@ func TestSearchStaticPath(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, nil)
-	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
-	tree.Insert(http.MethodGet, "/bar", barHandler, nil)
-	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, nil)
+	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/bar", barHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -470,9 +499,10 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -480,9 +510,10 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: &Expected{
-				handler: barHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     barHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -490,9 +521,10 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: &Expected{
-				handler: fooBarHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooBarHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 	}
@@ -504,12 +536,26 @@ func TestSearchStaticPath(t *testing.T) {
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
 		}
 
 		for i, param := range actual.params {
 			if !reflect.DeepEqual(param, c.expected.params[i]) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
 			}
 		}
 	}
@@ -522,20 +568,20 @@ func TestSearchPathWithParams(t *testing.T) {
 	fooIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooIDNameDateHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, `/foo/:id`, fooIDHandler, nil)
-	tree.Insert(http.MethodGet, `/foo/:id/:name`, fooIDNameHandler, nil)
-	tree.Insert(http.MethodGet, `/foo/:id/:name/:date`, fooIDNameDateHandler, nil)
+	tree.Insert(http.MethodGet, `/foo/:id`, fooIDHandler, []middleware{first})
+	tree.Insert(http.MethodGet, `/foo/:id/:name`, fooIDNameHandler, []middleware{first})
+	tree.Insert(http.MethodGet, `/foo/:id/:name/:date`, fooIDNameDateHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/1",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: fooIDHandler,
 				params: Params{
 					&Param{
@@ -543,6 +589,7 @@ func TestSearchPathWithParams(t *testing.T) {
 						value: "1",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -550,7 +597,7 @@ func TestSearchPathWithParams(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1/john",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: fooIDNameHandler,
 				params: Params{
 					&Param{
@@ -562,6 +609,7 @@ func TestSearchPathWithParams(t *testing.T) {
 						value: "john",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -569,7 +617,7 @@ func TestSearchPathWithParams(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1/john/2020",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: fooIDNameDateHandler,
 				params: Params{
 					&Param{
@@ -585,6 +633,7 @@ func TestSearchPathWithParams(t *testing.T) {
 						value: "2020",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 	}
@@ -596,12 +645,26 @@ func TestSearchPathWithParams(t *testing.T) {
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
 		}
 
 		for i, param := range actual.params {
 			if !reflect.DeepEqual(param, c.expected.params[i]) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
 			}
 		}
 	}
@@ -617,80 +680,45 @@ func TestSearchPriority(t *testing.T) {
 	IDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	IDPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, nil)
-	tree.Insert(http.MethodGet, "/", rootPriorityHandler, nil)
-	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
-	tree.Insert(http.MethodGet, "/foo", fooPriorityHandler, nil)
-	tree.Insert(http.MethodGet, "/:id", IDHandler, nil)
-	tree.Insert(http.MethodGet, "/:id", IDPriorityHandler, nil)
+	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/", rootPriorityHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo", fooPriorityHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/:id", IDHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/:id", IDPriorityHandler, []middleware{first})
 
 	cases := []struct {
-		hasError bool
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
-			hasError: true,
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootPriorityHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
-			hasError: false,
-			item: &Item{
-				method: http.MethodGet,
-				path:   "/",
-			},
-			expected: &Expected{
-				handler: rootPriorityHandler,
-				params:  Params{},
-			},
-		},
-		{
-			hasError: true,
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooPriorityHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
-			hasError: false,
-			item: &Item{
-				method: http.MethodGet,
-				path:   "/foo",
-			},
-			expected: &Expected{
-				handler: fooPriorityHandler,
-				params:  Params{},
-			},
-		},
-		{
-			hasError: true,
-			item: &Item{
-				method: http.MethodGet,
-				path:   "/bar",
-			},
-			expected: &Expected{
-				handler: IDHandler,
-				params:  Params{},
-			},
-		},
-		{
-			hasError: false,
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/1",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: IDPriorityHandler,
 				params: Params{
 					&Param{
@@ -698,37 +726,39 @@ func TestSearchPriority(t *testing.T) {
 						value: "1",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 	}
 
 	for _, c := range cases {
 		actual, err := tree.Search(c.item.method, c.item.path)
-		if c.hasError {
-			if reflect.ValueOf(actual.handler) == reflect.ValueOf(c.expected.handler) {
-				t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
-			}
-
-			for i, param := range actual.params {
-				if !reflect.DeepEqual(param, c.expected.params[i]) {
-					t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
-				}
-			}
-
-			return
-		}
 
 		if err != nil {
 			t.Errorf("err: %v actual: %v expected: %v\n", err, actual, c.expected)
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
 		}
 
 		for i, param := range actual.params {
 			if !reflect.DeepEqual(param, c.expected.params[i]) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
 			}
 		}
 	}
@@ -746,19 +776,19 @@ func TestSearchRegexp(t *testing.T) {
 	fooBarIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, nil)
-	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, nil)
-	tree.Insert(http.MethodGet, "/foo", fooHandler, nil)
-	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]`, fooIDHandler, nil)
-	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler, nil)
-	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, nil)
-	tree.Insert(http.MethodGet, `/foo/bar/:id`, fooBarIDHandler, nil)
-	tree.Insert(http.MethodGet, `/foo/bar/:id/:name`, fooBarIDNameHandler, nil)
+	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
+	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
+	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]`, fooIDHandler, []middleware{first})
+	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler, []middleware{first})
+	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, []middleware{first})
+	tree.Insert(http.MethodGet, `/foo/bar/:id`, fooBarIDHandler, []middleware{first})
+	tree.Insert(http.MethodGet, `/foo/bar/:id/:name`, fooBarIDNameHandler, []middleware{first})
 
 	cases := []struct {
 		hasError bool
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
 			hasError: false,
@@ -766,9 +796,10 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     rootHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -777,7 +808,11 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/",
 			},
-			expected: nil,
+			expected: &Result{
+				handler:     nil,
+				params:      Params{},
+				middlewares: []middleware{},
+			},
 		},
 		{
 			hasError: false,
@@ -785,7 +820,7 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/wildcard",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: rootWildCardHandler,
 				params: Params{
 					&Param{
@@ -793,6 +828,7 @@ func TestSearchRegexp(t *testing.T) {
 						value: "wildcard",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -801,7 +837,7 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/1234",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: rootWildCardHandler,
 				params: Params{
 					&Param{
@@ -809,6 +845,7 @@ func TestSearchRegexp(t *testing.T) {
 						value: "1234",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -817,9 +854,10 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &Expected{
-				handler: fooHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -828,7 +866,28 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: nil,
+			expected: &Result{
+				handler:     nil,
+				params:      Params{},
+				middlewares: []middleware{},
+			},
+		},
+		{
+			hasError: false,
+			item: &Item{
+				method: http.MethodOptions,
+				path:   "/bar",
+			},
+			expected: &Result{
+				handler: rootWildCardHandler,
+				params: Params{
+					&Param{
+						key:   "*",
+						value: "bar",
+					},
+				},
+				middlewares: []middleware{first},
+			},
 		},
 		{
 			hasError: false,
@@ -836,7 +895,7 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: fooIDHandler,
 				params: Params{
 					&Param{
@@ -844,6 +903,7 @@ func TestSearchRegexp(t *testing.T) {
 						value: "1",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -852,7 +912,11 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/notnumber",
 			},
-			expected: nil,
+			expected: &Result{
+				handler:     nil,
+				params:      Params{},
+				middlewares: []middleware{},
+			},
 		},
 		{
 			hasError: false,
@@ -860,7 +924,7 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1/john",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: fooIDNameHandler,
 				params: Params{
 					&Param{
@@ -872,15 +936,21 @@ func TestSearchRegexp(t *testing.T) {
 						value: "john",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 		{
 			hasError: true,
+
 			item: &Item{
 				method: http.MethodGet,
 				path:   "/foo/1/1",
 			},
-			expected: nil,
+			expected: &Result{
+				handler:     nil,
+				params:      Params{},
+				middlewares: []middleware{},
+			},
 		},
 		{
 			hasError: false,
@@ -888,18 +958,11 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: &Expected{
-				handler: fooBarHandler,
-				params:  Params{},
+			expected: &Result{
+				handler:     fooBarHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
-		},
-		{
-			hasError: true,
-			item: &Item{
-				method: http.MethodGet,
-				path:   "/foo/foo",
-			},
-			expected: nil,
 		},
 		{
 			hasError: false,
@@ -907,7 +970,7 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/1",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: fooBarIDHandler,
 				params: Params{
 					&Param{
@@ -915,6 +978,19 @@ func TestSearchRegexp(t *testing.T) {
 						value: "1",
 					},
 				},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			hasError: true,
+			item: &Item{
+				method: http.MethodPost,
+				path:   "/foo/bar/1",
+			},
+			expected: &Result{
+				handler:     nil,
+				params:      Params{},
+				middlewares: []middleware{},
 			},
 		},
 		{
@@ -923,7 +999,7 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/1/john",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: fooBarIDNameHandler,
 				params: Params{
 					&Param{
@@ -935,17 +1011,44 @@ func TestSearchRegexp(t *testing.T) {
 						value: "john",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 	}
 
 	for _, c := range cases {
 		actual, err := tree.Search(c.item.method, c.item.path)
+
 		if c.hasError {
 			if err == nil {
-				t.Errorf("err: expected err actual: %v", actual)
+				t.Errorf("expected err: %v actual: %v", err, actual)
 			}
-			return
+
+			if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+				t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+			}
+
+			if len(actual.params) != len(c.expected.params) {
+				t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
+			}
+
+			for i, param := range actual.params {
+				if !reflect.DeepEqual(param, c.expected.params[i]) {
+					t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+				}
+			}
+
+			if len(actual.middlewares) != len(c.expected.middlewares) {
+				t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+			}
+
+			for i, mws := range actual.middlewares {
+				if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+					t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
+				}
+			}
+
+			continue
 		}
 
 		if err != nil {
@@ -953,7 +1056,11 @@ func TestSearchRegexp(t *testing.T) {
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
 		}
 
 		for i, param := range actual.params {
@@ -961,6 +1068,17 @@ func TestSearchRegexp(t *testing.T) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
 			}
 		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
+			}
+		}
+
 	}
 }
 
@@ -970,21 +1088,22 @@ func TestSearchWildCardRegexp(t *testing.T) {
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootWildCardHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodOptions, `/`, rootHandler, nil)
-	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, nil)
+	tree.Insert(http.MethodOptions, `/`, rootHandler, []middleware{first})
+	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
-		expected *Expected
+		expected *Result
 	}{
 		{
 			item: &Item{
 				method: http.MethodOptions,
 				path:   "/",
 			},
-			expected: &Expected{
-				handler: rootHandler,
-				params:  Params{nil},
+			expected: &Result{
+				handler:     rootHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -992,7 +1111,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/wildcard",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: rootWildCardHandler,
 				params: Params{
 					&Param{
@@ -1000,6 +1119,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 						value: "wildcard",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 		{
@@ -1007,7 +1127,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/1234",
 			},
-			expected: &Expected{
+			expected: &Result{
 				handler: rootWildCardHandler,
 				params: Params{
 					&Param{
@@ -1015,6 +1135,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 						value: "1234",
 					},
 				},
+				middlewares: []middleware{first},
 			},
 		},
 	}
@@ -1026,12 +1147,18 @@ func TestSearchWildCardRegexp(t *testing.T) {
 		}
 
 		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
-			t.Errorf("actual handler:%v actual params:%v expected:%v", actual.handler, actual.params, c.expected)
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
 		}
 
 		for i, param := range actual.params {
 			if !reflect.DeepEqual(param, c.expected.params[i]) {
 				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
 			}
 		}
 	}
@@ -1123,52 +1250,6 @@ func TestDeleteEmpty(t *testing.T) {
 	for _, c := range cases {
 		if !reflect.DeepEqual(c.actual, c.expected) {
 			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
-		}
-	}
-}
-
-func TestFindStrInSlice(t *testing.T) {
-	cases := []struct {
-		item     []string
-		needle   string
-		expected string
-		hasError bool
-	}{
-		{
-			item:     []string{http.MethodGet},
-			needle:   http.MethodGet,
-			expected: http.MethodGet,
-			hasError: false,
-		},
-		{
-			item:     []string{http.MethodGet, http.MethodPost, http.MethodDelete},
-			needle:   http.MethodPost,
-			expected: http.MethodPost,
-			hasError: false,
-		},
-		{
-			item:     []string{http.MethodGet, http.MethodPost, http.MethodDelete},
-			needle:   http.MethodOptions,
-			expected: "",
-			hasError: true,
-		},
-		{
-			item:     []string{},
-			needle:   http.MethodOptions,
-			expected: "",
-			hasError: true,
-		},
-	}
-
-	for _, c := range cases {
-		actual, err := findStrInSlice(c.item, c.needle)
-		if actual != c.expected {
-			t.Errorf("actual:%v expected:%v", actual, c.expected)
-		}
-		if c.hasError {
-			if err == nil {
-				t.Errorf("err: expected err actual: %v", actual)
-			}
 		}
 	}
 }

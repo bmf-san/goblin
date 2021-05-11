@@ -20,30 +20,6 @@ func TestNewRouter(t *testing.T) {
 	}
 }
 
-func first(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "first: before\n")
-		next.ServeHTTP(w, r)
-		fmt.Fprintf(w, "first: after\n")
-	})
-}
-
-func second(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "second: before\n")
-		next.ServeHTTP(w, r)
-		fmt.Fprintf(w, "second: after\n")
-	})
-}
-
-func third(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "third: before\n")
-		next.ServeHTTP(w, r)
-		fmt.Fprintf(w, "third: after\n")
-	})
-}
-
 func TestRouter(t *testing.T) {
 	r := NewRouter()
 
@@ -107,10 +83,10 @@ func TestRouter(t *testing.T) {
 		name := GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/%v/%v", id, name)
 	}))
-	r.OPTION(`/option`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/option")
+	r.OPTIONS(`/options`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/options")
 	}))
-	r.OPTION(`:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.OPTIONS(`:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/%v", id)
 	}))
@@ -218,10 +194,10 @@ func TestRouter(t *testing.T) {
 			body:   "/foo/123/john",
 		},
 		{
-			path:   "/option",
+			path:   "/options",
 			method: http.MethodOptions,
 			code:   http.StatusOK,
-			body:   "/option",
+			body:   "/options",
 		},
 		{
 			path:   "/1",

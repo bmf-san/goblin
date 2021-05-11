@@ -36,7 +36,6 @@ type Result struct {
 	handler     http.Handler
 	params      Params
 	middlewares middlewares
-	method      string
 }
 
 const (
@@ -166,7 +165,6 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 		handler:     curNode.actions[method],
 		params:      params,
 		middlewares: curNode.middlewares,
-		method:      method,
 	}, nil
 }
 
@@ -223,15 +221,4 @@ func deleteEmpty(s []string) []string {
 		}
 	}
 	return r
-}
-
-// findStrInSlice find a method in slice.
-func findStrInSlice(s []string, needle string) (string, error) {
-	for _, v := range s {
-		if v == needle {
-			return v, nil
-		}
-	}
-
-	return "", errors.New("method is not found")
 }
