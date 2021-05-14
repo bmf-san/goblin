@@ -13,7 +13,7 @@ type Router struct {
 
 // route represents the route which has data for a routing.
 type route struct {
-	method      string
+	methods     []string
 	path        string
 	handler     http.Handler
 	middlewares middlewares
@@ -35,57 +35,21 @@ func (r *Router) Use(mws ...middleware) *Router {
 	return r
 }
 
-// GET sets a route for GET method.
-func (r *Router) GET(path string) *Router {
-	tmpRoute.method = http.MethodGet
-	tmpRoute.path = path
-	return r
-}
-
-// POST sets a route for POST method.
-func (r *Router) POST(path string) *Router {
-	tmpRoute.method = http.MethodPost
-	tmpRoute.path = path
-	return r
-}
-
-// PUT sets a route for PUT method.
-func (r *Router) PUT(path string) *Router {
-	tmpRoute.method = http.MethodPut
-	tmpRoute.path = path
-	return r
-}
-
-// PATCH sets a route for PATCH method.
-func (r *Router) PATCH(path string) *Router {
-	tmpRoute.method = http.MethodPatch
-	tmpRoute.path = path
-	return r
-}
-
-// DELETE sets a route for DELETE method.
-func (r *Router) DELETE(path string) *Router {
-	tmpRoute.method = http.MethodDelete
-	tmpRoute.path = path
-	return r
-}
-
-// OPTIONS sets a route for OPTIONS method.
-func (r *Router) OPTIONS(path string) *Router {
-	tmpRoute.method = http.MethodOptions
-	tmpRoute.path = path
+func (r *Router) Methods(methods ...string) *Router {
+	tmpRoute.methods = append(tmpRoute.methods, methods...)
 	return r
 }
 
 // Handler sets a handler.
-func (r *Router) Handler(handler http.Handler) {
+func (r *Router) Handler(path string, handler http.Handler) {
 	tmpRoute.handler = handler
+	tmpRoute.path = path
 	r.Handle()
 }
 
 // Handle handles a route.
 func (r *Router) Handle() {
-	r.tree.Insert(tmpRoute.method, tmpRoute.path, tmpRoute.handler, tmpRoute.middlewares)
+	r.tree.Insert(tmpRoute.methods, tmpRoute.path, tmpRoute.handler, tmpRoute.middlewares)
 	tmpRoute = &route{}
 }
 
