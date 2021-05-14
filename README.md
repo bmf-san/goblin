@@ -33,8 +33,12 @@ You can define routing as follows.
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "/")
+})
+
+r.Methods(http.MethodGet, http.MethodPost).Handler(`/methods`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "/methods")
 })
 
 http.ListenAndServe(":9999", r)
@@ -48,13 +52,13 @@ The one defined earlier takes precedence over the one defined later.
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/foo/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Handler(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id`)
 }))
-r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\d+$]`)
 }))
-r.GET(`/foo/:id[^\D+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Handler(`/foo/:id[^\D+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, `/foo/:id[^\D+$]`)
 }))
 
@@ -72,12 +76,12 @@ goblin supports named parameters as follows.
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/foo/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Handler(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     id := goblin.GetParam(r.Context(), "id")
     fmt.Fprintf(w, "/foo/%v", id)
 }))
 
-r.POST(`/foo/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Handler(`/foo/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     name := goblin.GetParam(r.Context(), "name")
     fmt.Fprintf(w, "/foo/%v", name)
 }))
@@ -95,7 +99,7 @@ You can also use named parameter with regular expression as follows.
 `:paramName[pattern]`
 
 ```go
-r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     id := goblin.GetParam(r.Context(), "id")
     fmt.Fprintf(w, "/foo/%v", id)
 }))
@@ -138,10 +142,10 @@ func third(next http.Handler) http.Handler {
 ```go
 r := goblin.NewRouter()
 
-r.GET(`/middleware`).Use(first).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "middleware\n")
 }))
-r.GET(`/middlewares`).Use(second, third).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Use(second, third).Handler(`/middlewares`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "middlewares\n")
 }))
 
@@ -181,10 +185,10 @@ func CORS(next http.Handler) http.Handler {
 ```
 
 ```go
-r.GET(`/`).Use(first).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodGet).Use(first).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "CORS")
 }))
-r.OPTIONS(`/`).Use(CORS).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+r.Methods(http.MethodOptions).Use(CORS).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     return
 }))
 ```
