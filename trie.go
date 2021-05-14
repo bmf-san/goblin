@@ -60,35 +60,38 @@ func NewTree() *Tree {
 }
 
 // Insert inserts a route definition to tree.
-func (t *Tree) Insert(method string, path string, handler http.Handler, mws middlewares) error {
+func (t *Tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) error {
 	curNode := t.node
 
-	if path == pathRoot {
+	for _, method := range methods {
+		if path == pathRoot {
+			curNode.label = path
+			curNode.actions[method] = handler
+			curNode.middlewares = mws
+			return nil
+		}
+
+		for _, l := range deleteEmpty(strings.Split(path, pathDelimiter)) {
+			if nextNode, ok := curNode.children[l]; ok {
+				curNode = nextNode
+			} else {
+				curNode.children[l] = &Node{
+					label:       l,
+					actions:     make(map[string]http.Handler),
+					middlewares: mws,
+					children:    make(map[string]*Node),
+				}
+				curNode.children[l].actions[method] = handler
+
+				curNode = curNode.children[l]
+			}
+		}
 		curNode.label = path
 		curNode.actions[method] = handler
 		curNode.middlewares = mws
+
 		return nil
 	}
-
-	for _, l := range deleteEmpty(strings.Split(path, pathDelimiter)) {
-		if nextNode, ok := curNode.children[l]; ok {
-			curNode = nextNode
-		} else {
-			curNode.children[l] = &Node{
-				label:       l,
-				actions:     make(map[string]http.Handler),
-				middlewares: mws,
-				children:    make(map[string]*Node),
-			}
-			curNode.children[l].actions[method] = handler
-
-			curNode = curNode.children[l]
-		}
-	}
-	curNode.label = path
-	curNode.actions[method] = handler
-	curNode.middlewares = mws
-
 	return nil
 }
 

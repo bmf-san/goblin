@@ -84,7 +84,7 @@ func TestInsert(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		if err := tree.Insert(c.method, c.path, c.handler, c.middlewares); err != nil {
+		if err := tree.Insert([]string{c.method}, c.path, c.handler, c.middlewares); err != nil {
 			t.Errorf("err: %v\n", err)
 		}
 	}
@@ -110,16 +110,16 @@ func TestSearchAllMethod(t *testing.T) {
 	rootDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootGetHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo", fooGetHandler, []middleware{first})
-	tree.Insert(http.MethodPost, "/", rootPostHandler, []middleware{first})
-	tree.Insert(http.MethodPost, "/foo", fooPostHandler, []middleware{first})
-	tree.Insert(http.MethodPut, "/", rootPutHandler, []middleware{first})
-	tree.Insert(http.MethodPut, "/foo", fooPutHandler, []middleware{first})
-	tree.Insert(http.MethodPatch, `/`, rootPatchHandler, []middleware{first})
-	tree.Insert(http.MethodPatch, `/foo`, fooPatchHandler, []middleware{first})
-	tree.Insert(http.MethodDelete, `/`, rootDeleteHandler, []middleware{first})
-	tree.Insert(http.MethodDelete, `/foo`, fooDeleteHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/", rootGetHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo", fooGetHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPost}, "/", rootPostHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPost}, "/foo", fooPostHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPut}, "/", rootPutHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPut}, "/foo", fooPutHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPatch}, `/`, rootPatchHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPatch}, `/foo`, fooPatchHandler, []middleware{first})
+	tree.Insert([]string{http.MethodDelete}, `/`, rootDeleteHandler, []middleware{first})
+	tree.Insert([]string{http.MethodDelete}, `/foo`, fooDeleteHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
@@ -275,8 +275,8 @@ func TestSearchWithoutRoot(t *testing.T) {
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/bar", barHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo", fooHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/bar", barHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
@@ -346,10 +346,10 @@ func TestSearchTrailingSlash(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo/", fooHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/bar/", barHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo/bar/", fooBarHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/", rootHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo/", fooHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/bar/", barHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo/bar/", fooBarHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
@@ -474,10 +474,10 @@ func TestSearchStaticPath(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/bar", barHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/", rootHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo", fooHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/bar", barHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo/bar", fooBarHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
@@ -568,9 +568,9 @@ func TestSearchPathWithParams(t *testing.T) {
 	fooIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooIDNameDateHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, `/foo/:id`, fooIDHandler, []middleware{first})
-	tree.Insert(http.MethodGet, `/foo/:id/:name`, fooIDNameHandler, []middleware{first})
-	tree.Insert(http.MethodGet, `/foo/:id/:name/:date`, fooIDNameDateHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, `/foo/:id`, fooIDHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, `/foo/:id/:name`, fooIDNameHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, `/foo/:id/:name/:date`, fooIDNameDateHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
@@ -680,12 +680,12 @@ func TestSearchPriority(t *testing.T) {
 	IDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	IDPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/", rootPriorityHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo", fooPriorityHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/:id", IDHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/:id", IDPriorityHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/", rootHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/", rootPriorityHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo", fooHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo", fooPriorityHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/:id", IDHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/:id", IDPriorityHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item
@@ -776,14 +776,14 @@ func TestSearchRegexp(t *testing.T) {
 	fooBarIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodGet, "/", rootHandler, []middleware{first})
-	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo", fooHandler, []middleware{first})
-	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]`, fooIDHandler, []middleware{first})
-	tree.Insert(http.MethodGet, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler, []middleware{first})
-	tree.Insert(http.MethodGet, "/foo/bar", fooBarHandler, []middleware{first})
-	tree.Insert(http.MethodGet, `/foo/bar/:id`, fooBarIDHandler, []middleware{first})
-	tree.Insert(http.MethodGet, `/foo/bar/:id/:name`, fooBarIDNameHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/", rootHandler, []middleware{first})
+	tree.Insert([]string{http.MethodOptions}, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo", fooHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, `/foo/:id[^\d+$]`, fooIDHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo/bar", fooBarHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, `/foo/bar/:id`, fooBarIDHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, `/foo/bar/:id/:name`, fooBarIDNameHandler, []middleware{first})
 
 	cases := []struct {
 		hasError bool
@@ -1088,8 +1088,8 @@ func TestSearchWildCardRegexp(t *testing.T) {
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootWildCardHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert(http.MethodOptions, `/`, rootHandler, []middleware{first})
-	tree.Insert(http.MethodOptions, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
+	tree.Insert([]string{http.MethodOptions}, `/`, rootHandler, []middleware{first})
+	tree.Insert([]string{http.MethodOptions}, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
 
 	cases := []struct {
 		item     *Item

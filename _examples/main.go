@@ -34,35 +34,35 @@ func third(next http.Handler) http.Handler {
 func main() {
 	r := goblin.NewRouter()
 
-	r.GET(`/middleware`).Use(first).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "middleware\n")
 	}))
-	r.GET(`/middlewares`).Use(second, third).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Use(second, third).Handler(`/middlewares`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "middlewares\n")
 	}))
-	r.GET(`/`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/")
 	}))
-	r.GET(`/foo`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Handler(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo")
 	}))
-	r.GET(`/foo/bar`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Handler(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo/bar")
 	}))
-	r.GET(`/foo/bar/:id`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Handler(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/foo/bar/%v", id)
 	}))
-	r.GET(`/foo/bar/:id/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Handler(`/foo/bar:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		name := goblin.GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
 	}))
-	r.GET(`/foo/:id[^\d+$]`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		fmt.Fprintf(w, "/foo/%v", id)
 	}))
-	r.GET(`/foo/:id[^\d+$]/:name`).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		name := goblin.GetParam(r.Context(), "name")
 		fmt.Fprintf(w, "/foo/%v/%v", id, name)
