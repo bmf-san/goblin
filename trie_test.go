@@ -100,25 +100,25 @@ func TestSearchAllMethod(t *testing.T) {
 	tree := NewTree()
 
 	rootGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootPutHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooPutHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootPatchHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooPatchHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooPutHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooPatchHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	tree.Insert([]string{http.MethodGet}, "/", rootGetHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, "/foo", fooGetHandler, []middleware{first})
 	tree.Insert([]string{http.MethodPost}, "/", rootPostHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPost}, "/foo", fooPostHandler, []middleware{first})
 	tree.Insert([]string{http.MethodPut}, "/", rootPutHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPut}, "/foo", fooPutHandler, []middleware{first})
 	tree.Insert([]string{http.MethodPatch}, `/`, rootPatchHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPatch}, `/foo`, fooPatchHandler, []middleware{first})
 	tree.Insert([]string{http.MethodDelete}, `/`, rootDeleteHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet}, "/foo", fooGetHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPost}, "/foo", fooPostHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPut}, "/foo", fooPutHandler, []middleware{first})
+	tree.Insert([]string{http.MethodPatch}, `/foo`, fooPatchHandler, []middleware{first})
 	tree.Insert([]string{http.MethodDelete}, `/foo`, fooDeleteHandler, []middleware{first})
 
 	cases := []struct {
@@ -138,22 +138,55 @@ func TestSearchAllMethod(t *testing.T) {
 		},
 		{
 			item: &Item{
-				method: http.MethodGet,
-				path:   "/foo",
+				method: http.MethodPost,
+				path:   "/",
 			},
 			expected: &Result{
-				handler:     fooGetHandler,
+				handler:     rootPostHandler,
 				params:      Params{},
 				middlewares: []middleware{first},
 			},
 		},
 		{
 			item: &Item{
-				method: http.MethodPost,
+				method: http.MethodPut,
 				path:   "/",
 			},
 			expected: &Result{
-				handler:     rootPostHandler,
+				handler:     rootPutHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodPatch,
+				path:   "/",
+			},
+			expected: &Result{
+				handler:     rootPatchHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodDelete,
+				path:   "/",
+			},
+			expected: &Result{
+				handler:     rootDeleteHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/foo",
+			},
+			expected: &Result{
+				handler:     fooGetHandler,
 				params:      Params{},
 				middlewares: []middleware{first},
 			},
@@ -172,17 +205,6 @@ func TestSearchAllMethod(t *testing.T) {
 		{
 			item: &Item{
 				method: http.MethodPut,
-				path:   "/",
-			},
-			expected: &Result{
-				handler:     rootPutHandler,
-				params:      Params{},
-				middlewares: []middleware{first},
-			},
-		},
-		{
-			item: &Item{
-				method: http.MethodPut,
 				path:   "/foo",
 			},
 			expected: &Result{
@@ -194,32 +216,10 @@ func TestSearchAllMethod(t *testing.T) {
 		{
 			item: &Item{
 				method: http.MethodPatch,
-				path:   "/",
-			},
-			expected: &Result{
-				handler:     rootPatchHandler,
-				params:      Params{},
-				middlewares: []middleware{first},
-			},
-		},
-		{
-			item: &Item{
-				method: http.MethodPatch,
 				path:   "/foo",
 			},
 			expected: &Result{
 				handler:     fooPatchHandler,
-				params:      Params{},
-				middlewares: []middleware{first},
-			},
-		},
-		{
-			item: &Item{
-				method: http.MethodDelete,
-				path:   "/",
-			},
-			expected: &Result{
-				handler:     rootDeleteHandler,
 				params:      Params{},
 				middlewares: []middleware{first},
 			},
@@ -269,6 +269,120 @@ func TestSearchAllMethod(t *testing.T) {
 	}
 }
 
+func TestSearchPathCommon(t *testing.T) {
+	tree := NewTree()
+
+	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+
+	tree.Insert([]string{http.MethodGet}, "/", rootHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet, http.MethodPost}, "/foo", fooHandler, []middleware{first})
+	tree.Insert([]string{http.MethodGet, http.MethodPost, http.MethodDelete}, "/foo/bar", fooBarHandler, []middleware{first})
+
+	cases := []struct {
+		item     *Item
+		expected *Result
+	}{
+		{
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/",
+			},
+			expected: &Result{
+				handler:     rootHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/foo",
+			},
+			expected: &Result{
+				handler:     fooHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodPost,
+				path:   "/foo",
+			},
+			expected: &Result{
+				handler:     fooHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodGet,
+				path:   "/foo/bar",
+			},
+			expected: &Result{
+				handler:     fooBarHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodPost,
+				path:   "/foo/bar",
+			},
+			expected: &Result{
+				handler:     fooBarHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+		{
+			item: &Item{
+				method: http.MethodDelete,
+				path:   "/foo/bar",
+			},
+			expected: &Result{
+				handler:     fooBarHandler,
+				params:      Params{},
+				middlewares: []middleware{first},
+			},
+		},
+	}
+
+	for _, c := range cases {
+		actual, err := tree.Search(c.item.method, c.item.path)
+		if err != nil {
+			t.Errorf("err: %v actual: %v expected: %v\n", err, actual, c.expected)
+		}
+
+		if reflect.ValueOf(actual.handler) != reflect.ValueOf(c.expected.handler) {
+			t.Errorf("actual:%v expected:%v", actual.handler, c.expected.handler)
+		}
+
+		if len(actual.params) != len(c.expected.params) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
+		}
+
+		for i, param := range actual.params {
+			if !reflect.DeepEqual(param, c.expected.params[i]) {
+				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+			}
+		}
+
+		if len(actual.middlewares) != len(c.expected.middlewares) {
+			t.Errorf("actual: %v expected: %v\n", len(actual.middlewares), len(c.expected.middlewares))
+		}
+
+		for i, mws := range actual.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.middlewares[i]) {
+				t.Errorf("actual: %v expected: %v\n", mws, c.expected.middlewares[i])
+			}
+		}
+	}
+}
 func TestSearchWithoutRoot(t *testing.T) {
 	tree := NewTree()
 
@@ -1224,25 +1338,25 @@ func TestGetParamName(t *testing.T) {
 	}
 }
 
-func TestDeleteEmpty(t *testing.T) {
+func TestExplodePath(t *testing.T) {
 	cases := []struct {
 		actual   []string
 		expected []string
 	}{
 		{
-			actual:   deleteEmpty(strings.Split("/", pathDelimiter)),
+			actual:   explodePath(strings.Split("/", pathDelimiter)),
 			expected: nil,
 		},
 		{
-			actual:   deleteEmpty(strings.Split("/foo", pathDelimiter)),
+			actual:   explodePath(strings.Split("/foo", pathDelimiter)),
 			expected: []string{"foo"},
 		},
 		{
-			actual:   deleteEmpty(strings.Split("/foo/bar", pathDelimiter)),
+			actual:   explodePath(strings.Split("/foo/bar", pathDelimiter)),
 			expected: []string{"foo", "bar"},
 		},
 		{
-			actual:   deleteEmpty(strings.Split("/foo/bar/baz", pathDelimiter)),
+			actual:   explodePath(strings.Split("/foo/bar/baz", pathDelimiter)),
 			expected: []string{"foo", "bar", "baz"},
 		},
 	}
