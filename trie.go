@@ -63,35 +63,41 @@ func NewTree() *Tree {
 func (t *Tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) error {
 	curNode := t.node
 
-	for _, method := range methods {
-		if path == pathRoot {
-			curNode.label = path
-			curNode.actions[method] = handler
-			curNode.middlewares = mws
-			return nil
-		}
-
-		for _, l := range deleteEmpty(strings.Split(path, pathDelimiter)) {
-			if nextNode, ok := curNode.children[l]; ok {
-				curNode = nextNode
-			} else {
-				curNode.children[l] = &Node{
-					label:       l,
-					actions:     make(map[string]http.Handler),
-					middlewares: mws,
-					children:    make(map[string]*Node),
-				}
-				curNode.children[l].actions[method] = handler
-
-				curNode = curNode.children[l]
-			}
-		}
+	// For root node.
+	if path == pathRoot {
 		curNode.label = path
-		curNode.actions[method] = handler
+		for _, method := range methods {
+			curNode.actions[method] = handler
+		}
 		curNode.middlewares = mws
-
-		return nil
 	}
+
+	ep := explodePath(strings.Split(path, pathDelimiter))
+	for i, l := range ep {
+		nextNode, ok := curNode.children[l]
+		if ok {
+			curNode = nextNode
+		}
+		// Create a new node.
+		if !ok {
+			curNode.children[l] = &Node{
+				label:       l,
+				actions:     make(map[string]http.Handler),
+				middlewares: nil,
+				children:    make(map[string]*Node),
+			}
+			curNode = curNode.children[l]
+		}
+		// last loop.
+		if i == len(ep)-1 {
+			curNode.label = l
+			for _, method := range methods {
+				curNode.actions[method] = handler
+			}
+			curNode.middlewares = mws
+		}
+	}
+
 	return nil
 }
 
@@ -126,7 +132,7 @@ func (t *Tree) Search(method string, path string) (*Result, error) {
 
 	n := t.node
 
-	label := deleteEmpty(strings.Split(path, pathDelimiter))
+	label := explodePath(strings.Split(path, pathDelimiter))
 	curNode := n
 
 	for _, l := range label {
@@ -215,8 +221,8 @@ func getParamName(label string) string {
 	return label[leftI+1 : rightI]
 }
 
-// deleteEmpty removes an empty value in slice.
-func deleteEmpty(s []string) []string {
+// explodePath removes an empty value in slice.
+func explodePath(s []string) []string {
 	var r []string
 	for _, str := range s {
 		if str != "" {
