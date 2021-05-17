@@ -1,7 +1,6 @@
 package goblin
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -9,33 +8,42 @@ import (
 	"sync"
 )
 
-// Tree is a trie tree.
-type Tree struct {
-	node *Node
+// tree is a trie tree.
+type tree struct {
+	node *node
 }
 
-// Node is a node of tree.
-type Node struct {
-	label       string
-	actions     map[string]http.Handler // key: method value: handler
+// node is a node of tree.
+type node struct {
+	label    string
+	actions  map[string]*action // key is method
+	children map[string]*node   // key is label of next nodes
+}
+
+// action is an action.
+type action struct {
 	middlewares middlewares
-	children    map[string]*Node
+	handler     http.Handler
 }
 
-// Param is parameter.
-type Param struct {
+// param is a parameter.
+type param struct {
 	key   string
 	value string
 }
 
-// Params is parameters.
-type Params []*Param
+// params is parameters.
+type params []*param
 
-// Result is a search result.
-type Result struct {
-	handler     http.Handler
-	params      Params
-	middlewares middlewares
+// result is a search result.
+type result struct {
+	actions *action
+	params  params
+}
+
+// newResult creates a new result.
+func newResult() *result {
+	return &result{}
 }
 
 const (
@@ -48,53 +56,55 @@ const (
 )
 
 // NewTree creates a new trie tree.
-func NewTree() *Tree {
-	return &Tree{
-		node: &Node{
-			label:       pathRoot,
-			actions:     make(map[string]http.Handler),
-			middlewares: nil,
-			children:    make(map[string]*Node),
+func NewTree() *tree {
+	return &tree{
+		node: &node{
+			label:    pathRoot,
+			actions:  make(map[string]*action),
+			children: make(map[string]*node),
 		},
 	}
 }
 
 // Insert inserts a route definition to tree.
-func (t *Tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) error {
+func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) error {
 	curNode := t.node
-
-	// For root node.
 	if path == pathRoot {
 		curNode.label = path
 		for _, method := range methods {
-			curNode.actions[method] = handler
+			curNode.actions[method] = &action{
+				middlewares: mws,
+				handler:     handler,
+			}
 		}
-		curNode.middlewares = mws
+		return nil
 	}
-
-	ep := explodePath(strings.Split(path, pathDelimiter))
-	for i, l := range ep {
-		nextNode, ok := curNode.children[l]
+	ep := explodePath(path)
+	for i, p := range ep {
+		nextNode, ok := curNode.children[p]
 		if ok {
 			curNode = nextNode
 		}
 		// Create a new node.
 		if !ok {
-			curNode.children[l] = &Node{
-				label:       l,
-				actions:     make(map[string]http.Handler),
-				middlewares: nil,
-				children:    make(map[string]*Node),
+			curNode.children[p] = &node{
+				label:    p,
+				actions:  make(map[string]*action),
+				children: make(map[string]*node),
 			}
-			curNode = curNode.children[l]
+			curNode = curNode.children[p]
 		}
 		// last loop.
+		// If there is already registered data, overwrite it.
 		if i == len(ep)-1 {
-			curNode.label = l
+			curNode.label = p
 			for _, method := range methods {
-				curNode.actions[method] = handler
+				curNode.actions[method] = &action{
+					middlewares: mws,
+					handler:     handler,
+				}
 			}
-			curNode.middlewares = mws
+			break
 		}
 	}
 
@@ -127,54 +137,63 @@ func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 var regC = &regCache{}
 
 // Search searches a path from a tree.
-func (t *Tree) Search(method string, path string) (*Result, error) {
-	var params Params
-
-	n := t.node
-
-	label := explodePath(strings.Split(path, pathDelimiter))
-	curNode := n
-
-	for _, l := range label {
-		if nextNode, ok := curNode.children[l]; ok {
+func (t *tree) Search(method string, path string) (*result, error) {
+	result := newResult()
+	var params params
+	curNode := t.node
+	for _, p := range explodePath(path) {
+		nextNode, ok := curNode.children[p]
+		if ok {
 			curNode = nextNode
-		} else {
-			cc := curNode.children
-			for c := range cc {
-				if string([]rune(c)[0]) == paramDelimiter {
-					ptn := getPattern(c)
-
-					reg, err := regC.Get(ptn)
-					if err != nil {
-						return nil, err
-					}
-					if reg.Match([]byte(l)) {
-						param := getParamName(c)
-						params = append(params, &Param{
-							key:   param,
-							value: l,
-						})
-
-						curNode = cc[c]
-						break
-					} else {
-						return &Result{}, errors.New("param does not match")
-					}
+			continue
+		}
+		if len(curNode.children) == 0 {
+			if curNode.label != p {
+				// no matching path was found.
+				return nil, ErrNotFound
+			}
+			break
+		}
+		isParamMatch := false
+		for c := range curNode.children {
+			if string([]rune(c)[0]) == paramDelimiter {
+				ptn := getPattern(c)
+				reg, err := regC.Get(ptn)
+				if err != nil {
+					return nil, err
 				}
+				if reg.Match([]byte(p)) {
+					pn := getParamName(c)
+					params = append(params, &param{
+						key:   pn,
+						value: p,
+					})
+					curNode = curNode.children[c]
+					isParamMatch = true
+					break
+				}
+				// no matching param was found.
+				return nil, ErrNotFound
 			}
 		}
+		if isParamMatch == false {
+			// no matching param was found.
+			return nil, ErrNotFound
+		}
 	}
-
-	handler := curNode.actions[method]
-	if handler == nil {
-		return &Result{}, errors.New("handler is not registered")
+	if path == pathRoot {
+		if len(curNode.actions) == 0 {
+			// no matching handler and middlewares was found.
+			return nil, ErrNotFound
+		}
 	}
-
-	return &Result{
-		handler:     curNode.actions[method],
-		params:      params,
-		middlewares: curNode.middlewares,
-	}, nil
+	result.actions = curNode.actions[method]
+	if result.actions == nil {
+		// no matching handler and middlewares was found.
+		return nil, ErrMethodNotAllowed
+	}
+	result.params = params
+	return result, nil
 }
 
 // getPattern gets a pattern from a label.
@@ -222,7 +241,8 @@ func getParamName(label string) string {
 }
 
 // explodePath removes an empty value in slice.
-func explodePath(s []string) []string {
+func explodePath(path string) []string {
+	s := strings.Split(path, pathDelimiter)
 	var r []string
 	for _, str := range s {
 		if str != "" {

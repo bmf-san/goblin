@@ -6,12 +6,12 @@ import (
 )
 
 func TestGetParam(t *testing.T) {
-	params := &Params{
-		&Param{
+	params := &params{
+		&param{
 			key:   "id",
 			value: "123",
 		},
-		&Param{
+		&param{
 			key:   "name",
 			value: "john",
 		},
