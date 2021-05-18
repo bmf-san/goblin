@@ -2,13 +2,13 @@ package goblin
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 )
 
 // Router represents the router which handles routing.
 type Router struct {
-	tree *Tree
+	tree *tree
 }
 
 // route represents the route which has data for a routing.
@@ -19,7 +19,14 @@ type route struct {
 	middlewares middlewares
 }
 
-var tmpRoute = &route{}
+var (
+	tmpRoute = &route{}
+
+	// Error for not found.
+	ErrNotFound = errors.New("no matching route was found")
+	// Error for method not allowed.
+	ErrMethodNotAllowed = errors.New("methods is not allowed")
+)
 
 // NewRouter creates a new router.
 func NewRouter() *Router {
@@ -60,20 +67,28 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
 	result, err := r.tree.Search(method, path)
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`"Access %s: %s"`, path, err), http.StatusNotImplemented)
+		status := handleErr(err)
+		w.WriteHeader(status)
 		return
 	}
-
-	h := result.handler
-
-	if result.middlewares != nil {
-		h = result.middlewares.then(result.handler)
+	h := result.actions.handler
+	if result.actions.middlewares != nil {
+		h = result.actions.middlewares.then(result.actions.handler)
 	}
-
 	if result.params != nil {
 		ctx := context.WithValue(req.Context(), ParamsKey, result.params)
 		req = req.WithContext(ctx)
 	}
-
 	h.ServeHTTP(w, req)
+}
+
+func handleErr(err error) int {
+	var status int
+	switch err {
+	case ErrMethodNotAllowed:
+		status = http.StatusMethodNotAllowed
+	case ErrNotFound:
+		status = http.StatusNotFound
+	}
+	return status
 }

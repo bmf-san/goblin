@@ -38,7 +38,12 @@ r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWrit
 })
 
 r.Methods(http.MethodGet, http.MethodPost).Handler(`/methods`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "/methods")
+    if r.Method == http.MethodGet {
+        fmt.Fprintf(w, "GET")
+    }
+    if r.Method == http.MethodPost {
+        fmt.Fprintf(w, "POST")
+    }
 })
 
 http.ListenAndServe(":9999", r)

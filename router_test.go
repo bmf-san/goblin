@@ -224,3 +224,26 @@ func TestRouter(t *testing.T) {
 		}
 	}
 }
+
+func TestHandleErr(t *testing.T) {
+	cases := []struct {
+		actual   int
+		expected int
+	}{
+		{
+			actual:   handleErr(ErrMethodNotAllowed),
+			expected: http.StatusMethodNotAllowed,
+		},
+		{
+			actual:   handleErr(ErrNotFound),
+			expected: http.StatusNotFound,
+		},
+	}
+
+	for _, c := range cases {
+		if c.actual != c.expected {
+			t.Errorf("actual: %v expected: %v\n", c.actual, c.expected)
+		}
+	}
+
+}

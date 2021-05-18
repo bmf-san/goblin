@@ -11,7 +11,7 @@ const (
 
 // GetParam gets parameters from request.
 func GetParam(ctx context.Context, name string) string {
-	params, _ := ctx.Value(ParamsKey).(Params)
+	params, _ := ctx.Value(ParamsKey).(params)
 
 	for i := range params {
 		if params[i].key == name {
