@@ -366,55 +366,54 @@ func TestSearchCommonPrefix(t *testing.T) {
 				params: params{},
 			},
 		},
-		// TODO: /fooで登録、/fo一致しちゃう問題
-		// {
-		// 	hasError: true,
-		// 	item: &item{
-		// 		method: http.MethodGet,
-		// 		path:   "/",
-		// 	},
-		// 	expected: nil,
-		// },
-		// {
-		// 	hasError: true,
-		// 	item: &item{
-		// 		method: http.MethodGet,
-		// 		path:   "/b",
-		// 	},
-		// 	expected: nil,
-		// },
-		// {
-		// 	hasError: true,
-		// 	item: &item{
-		// 		method: http.MethodGet,
-		// 		path:   "/f",
-		// 	},
-		// 	expected: nil,
-		// },
-		// {
-		// 	hasError: true,
-		// 	item: &item{
-		// 		method: http.MethodGet,
-		// 		path:   "/fo",
-		// 	},
-		// 	expected: nil,
-		// },
-		// {
-		// 	hasError: true,
-		// 	item: &item{
-		// 		method: http.MethodGet,
-		// 		path:   "/fooo",
-		// 	},
-		// 	expected: nil,
-		// },
-		// {
-		// 	hasError: true,
-		// 	item: &item{
-		// 		method: http.MethodGet,
-		// 		path:   "/foo/bar",
-		// 	},
-		// 	expected: nil,
-		// },
+		{
+			hasError: true,
+			item: &item{
+				method: http.MethodGet,
+				path:   "/",
+			},
+			expected: nil,
+		},
+		{
+			hasError: true,
+			item: &item{
+				method: http.MethodGet,
+				path:   "/b",
+			},
+			expected: nil,
+		},
+		{
+			hasError: true,
+			item: &item{
+				method: http.MethodGet,
+				path:   "/f",
+			},
+			expected: nil,
+		},
+		{
+			hasError: true,
+			item: &item{
+				method: http.MethodGet,
+				path:   "/fo",
+			},
+			expected: nil,
+		},
+		{
+			hasError: true,
+			item: &item{
+				method: http.MethodGet,
+				path:   "/fooo",
+			},
+			expected: nil,
+		},
+		{
+			hasError: true,
+			item: &item{
+				method: http.MethodGet,
+				path:   "/foo/bar",
+			},
+			expected: nil,
+		},
 	}
 
 	testWithFailure(t, tree, cases)
