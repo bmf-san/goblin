@@ -1,6 +1,6 @@
 references: &golang-image
     docker:
-      - image: golang:1.15-alpine
+      - image: golang:1.17-alpine
     working_directory: /go/src/github.com/goblin
 version: 2
 jobs:
