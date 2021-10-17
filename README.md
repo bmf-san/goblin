@@ -14,7 +14,9 @@ A golang http router based on trie tree.
 - Lightweight
 - Fully compatible with net/http
 - No external dependencies
-- Support named parameters with an optional regular expression
+- Support method-based routing
+- Support variables in URL paths
+- Support regexp route patterns
 - Support middlewares
 
 # Install
@@ -23,8 +25,8 @@ go get -u github.com/bmf-san/goblin
 ```
 
 # Usage
-## Basic
-Goblin supports these http methods.
+## Method-based routing
+Goblin supports method-based routing.
 
 `GET/POST/PUT/PATCH/DELETE/OPTIONS`
 
@@ -47,6 +49,41 @@ r.Methods(http.MethodGet, http.MethodPost).Handler(`/methods`, http.HandlerFunc(
 })
 
 http.ListenAndServe(":9999", r)
+```
+
+## Variables in URL paths
+goblin supports variabled in URL paths.
+
+```go
+r := goblin.NewRouter()
+
+r.Methods(http.MethodGet).Handler(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := goblin.GetParam(r.Context(), "id")
+    fmt.Fprintf(w, "/foo/%v", id)
+}))
+
+r.Methods(http.MethodGet).Handler(`/foo/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    name := goblin.GetParam(r.Context(), "name")
+    fmt.Fprintf(w, "/foo/%v", name)
+}))
+
+http.ListenAndServe(":9999", r)
+```
+
+If you use the named parameters without regular expression as in the above case, it is internally interpreted as a wildcard (`(.+)`) regular expression.
+
+So `:id` is substantially defined as `:id[(.+)]` internaly.
+
+## Regexp route patterns
+goblin support regexp route patterns.
+
+`:paramName[pattern]`
+
+```go
+r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := goblin.GetParam(r.Context(), "id")
+    fmt.Fprintf(w, "/foo/%v", id)
+}))
 ```
 
 ## Matching priority
@@ -73,42 +110,6 @@ http.ListenAndServe(":9999", r)
 In the above case, when accessing `/foo/1`, it matches the routing defined first.
 
 So it doesn't match the 2nd and 3rd defined routings.
-
-
-## Named parameters
-goblin supports named parameters as follows.
-
-```go
-r := goblin.NewRouter()
-
-r.Methods(http.MethodGet).Handler(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    id := goblin.GetParam(r.Context(), "id")
-    fmt.Fprintf(w, "/foo/%v", id)
-}))
-
-r.Methods(http.MethodGet).Handler(`/foo/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    name := goblin.GetParam(r.Context(), "name")
-    fmt.Fprintf(w, "/foo/%v", name)
-}))
-
-http.ListenAndServe(":9999", r)
-```
-
-If you use the named parameters without regular expression as in the above case, it is internally interpreted as a wildcard (`(.+)`) regular expression.
-
-So `:id` is substantially defined as `:id[(.+)]` internaly.
-
-## Named parameters with regular expression
-You can also use named parameter with regular expression as follows.
-
-`:paramName[pattern]`
-
-```go
-r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    id := goblin.GetParam(r.Context(), "id")
-    fmt.Fprintf(w, "/foo/%v", id)
-}))
-```
 
 ## Middlewares
 goblin supports middlewares.
