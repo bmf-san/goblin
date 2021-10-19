@@ -202,26 +202,8 @@ r.Methods(http.MethodOptions).Use(CORS).Handler(`/`, http.HandlerFunc(func(w htt
 # Examples
 See [_examples](https://github.com/bmf-san/goblin/blob/master/_examples).
 
-# Router design
-This is a rough sketch of what the router process.
-
-As you know, HTTP routers connect paths and handlers based on a protocol called HTTP.
-
-<img src="https://user-images.githubusercontent.com/13291041/117673347-af344e80-b1e5-11eb-9b89-1ec616cd74a2.png" width="600"><br>
-
-Goblin uses a data structure based on the trie tree.
-
-Goblin internally creates a tree like this when the followin routing is provided:
-
-<img src="https://user-images.githubusercontent.com/13291041/117675621-b3616b80-b1e7-11eb-9c64-8542a0f9c7c2.png" width="600"><br>
-
-<img src="https://user-images.githubusercontent.com/13291041/117675761-d4c25780-b1e7-11eb-9ec7-e78ac0ce142b.png" width="800"><br>
-
-It seems that routers that are more conscious of memory efficiency use a prefix tree (patricia trie), but goblin uses a simple trie tree.
-
-If you want to take a closer look at the tree structure, use a debugger to look at the data structure.
-
-If you find a bug, I would be grateful if you could contribute!
+# Wiki
+See [Wiki](https://github.com/bmf-san/goblin/wiki).
 
 # Contribution
 We are always accepting issues, pull requests, and other requests and questions.
