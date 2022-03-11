@@ -1,8 +1,12 @@
 references: &golang-image
     docker:
-      - image: golang:1.17-alpine
-    working_directory: /go/src/github.com/goblin
-version: 2
+      - image: cimg/go:1.17.8
+
+version: 2.1
+
+orbs:
+  codecov: codecov/codecov@3.2.2
+
 jobs:
   download_go_modules:
     <<: *golang-image
@@ -28,10 +32,27 @@ jobs:
                 go get -u golang.org/x/lint/golint && golint ./...
         - run:
             name: Run vet
-            command: CGO_ENABLED=0 go vet ./...
+            command: go vet ./...
         - run:
             name: Run tests
-            command: CGO_ENABLED=0 go test -v ./...
+            command: go test -v -race ./...
+  build:
+    <<: *golang-image
+    steps:
+        - checkout
+        - run:
+            name: Build go
+            command: go build
+        - run:
+            name: Create a temporary directory for artifacts
+            command: |
+                mkdir -p /tmp/artifacts
+        - run:
+            name: Generate coverage
+            command: |
+                go test -v -race -cover -coverprofile=c.out ./...
+        - codecov/upload:
+            file: ./c.out
 
 workflows:
     version: 2
@@ -41,3 +62,4 @@ workflows:
         - tests:
             requires:
               - download_go_modules
+        - build
