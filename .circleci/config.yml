@@ -1,6 +1,6 @@
 references: &golang-image
     docker:
-      - image: cimg/go:1.17.8
+      - image: cimg/go:1.18
 
 version: 2.1
 
@@ -26,10 +26,6 @@ jobs:
     <<: *golang-image
     steps:
         - checkout
-        - run:
-            name: Run golint
-            command: >
-                go get -u golang.org/x/lint/golint && golint ./...
         - run:
             name: Run vet
             command: go vet ./...
