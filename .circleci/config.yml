@@ -31,7 +31,7 @@ jobs:
             command: go vet ./...
         - run:
             name: Run tests
-            command: go test -v -race ./...
+            command: make test
   build:
     <<: *golang-image
     steps:
@@ -46,7 +46,7 @@ jobs:
         - run:
             name: Generate coverage
             command: |
-                go test -v -race -cover -coverprofile=c.out -covermode=atomic ./...
+                make test-cover
         - codecov/upload:
             file: ./c.out
 
