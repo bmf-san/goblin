@@ -269,8 +269,8 @@ func TestCustomErrorHandler(t *testing.T) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		fmt.Fprintf(w, "methodnotallowed")
 	})
-	r.Methods(http.MethodGet).Handler(`/customerrorhandler`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-	r.Methods(http.MethodGet).Handler(`/customemethodnotallowed`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	r.Methods(http.MethodGet).Handler(`/custommethodnotfound`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	r.Methods(http.MethodGet).Handler(`/custommethodnotallowed`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
 	cases := []struct {
 		path   string
@@ -282,10 +282,10 @@ func TestCustomErrorHandler(t *testing.T) {
 			path:   "/",
 			method: http.MethodGet,
 			code:   http.StatusNotFound,
-			body:   "notfound",
+			body:   "statusnotfound",
 		},
 		{
-			path:   "/methodnotallowed",
+			path:   "/custommethodnotallowed",
 			method: http.MethodPost,
 			code:   http.StatusMethodNotAllowed,
 			body:   "methodnotallowed",

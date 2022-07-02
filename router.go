@@ -74,6 +74,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		r.NotFoundHandler.ServeHTTP(w, req)
+		return
 	}
 
 	if err == ErrMethodNotAllowed {
@@ -82,6 +83,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		r.MethodNotAllowedHandler.ServeHTTP(w, req)
+		return
 	}
 
 	h := result.actions.handler
