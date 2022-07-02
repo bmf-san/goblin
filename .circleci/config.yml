@@ -46,7 +46,7 @@ jobs:
         - run:
             name: Generate coverage
             command: |
-                go test -v -race -cover -coverprofile=c.out ./...
+                go test -v -race -cover -coverprofile=c.out -covermode=atomic ./...
         - codecov/upload:
             file: ./c.out
 
