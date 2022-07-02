@@ -8,7 +8,9 @@ import (
 
 // Router represents the router which handles routing.
 type Router struct {
-	tree *tree
+	tree                    *tree
+	NotFoundHandler         http.Handler
+	MethodNotAllowedHandler http.Handler
 }
 
 // route represents the route which has data for a routing.
@@ -66,11 +68,22 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	path := req.URL.Path
 	result, err := r.tree.Search(method, path)
-	if err != nil {
-		status := handleErr(err)
-		w.WriteHeader(status)
-		return
+	if err == ErrNotFound {
+		if r.NotFoundHandler == nil {
+			http.NotFoundHandler().ServeHTTP(w, req)
+			return
+		}
+		r.NotFoundHandler.ServeHTTP(w, req)
 	}
+
+	if err == ErrMethodNotAllowed {
+		if r.MethodNotAllowedHandler == nil {
+			methodNotAllowedHandler().ServeHTTP(w, req)
+			return
+		}
+		r.MethodNotAllowedHandler.ServeHTTP(w, req)
+	}
+
 	h := result.actions.handler
 	if result.actions.middlewares != nil {
 		h = result.actions.middlewares.then(result.actions.handler)
@@ -82,13 +95,9 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	h.ServeHTTP(w, req)
 }
 
-func handleErr(err error) int {
-	var status int
-	switch err {
-	case ErrMethodNotAllowed:
-		status = http.StatusMethodNotAllowed
-	case ErrNotFound:
-		status = http.StatusNotFound
-	}
-	return status
+// methodNotAllowedHandler is a default handler when status code is 405.
+func methodNotAllowedHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	})
 }
