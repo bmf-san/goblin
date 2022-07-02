@@ -1,61 +1,57 @@
-references: &golang-image
-    docker:
-      - image: cimg/go:1.18
-
 version: 2.1
 
 orbs:
   codecov: codecov/codecov@3.2.2
 
 jobs:
-  download_go_modules:
-    <<: *golang-image
+  "test":
+    parameters:
+      version:
+        type: string
+      modules:
+        type: boolean
+        default: true
+    docker:
+      - image: "cimg/go:<< parameters.version >>"
+    working_directory: ~/go/src/github.com/bmf-san/goblin
+    environment:
+      GO111MODULE: "on"
     steps:
       - checkout
-      - restore_cache:
-          name: Restore go modules cache
-          keys:
-            - go-modules-{{ checksum "go.sum" }}
-      - run: go mod download
-      - save_cache:
-          name: Save go modules cache
-          key: go-modules-{{ checksum "go.sum" }}
-          paths:
-            - "/go/pkg/mod"
-  tests:
-    <<: *golang-image
-    steps:
-        - checkout
-        - run:
-            name: Run vet
-            command: go vet ./...
-        - run:
-            name: Run tests
-            command: make test
-  build:
-    <<: *golang-image
-    steps:
-        - checkout
-        - run:
-            name: Build go
-            command: go build
-        - run:
-            name: Create a temporary directory for artifacts
-            command: |
-                mkdir -p /tmp/artifacts
-        - run:
-            name: Generate coverage
-            command: |
-                make test-cover
-        - codecov/upload:
-            file: ./c.out
+      - run:
+          name: "Go version"
+          command: >
+            go version
+      - run:
+          name: "Fetch dependencies"
+          command: >
+            go mod download
+      - run:
+          name: "Run go lint"
+          command: >
+            make lint
+      - run:
+          name: "Run go test"
+          command: >
+            make test
+      - run:
+          name: Build go
+          command: go build
+      - run:
+          name: Create a temporary directory for artifacts
+          command: |
+              mkdir -p /tmp/artifacts
+      - run:
+          name: Generate coverage
+          command: |
+              make test-cover OUT=<< parameters.version >>.out
+      - codecov/upload:
+          file: ./<< parameters.version >>.out
 
 workflows:
-    version: 2
-    build_and_tests:
-      jobs:
-        - download_go_modules
-        - tests:
-            requires:
-              - download_go_modules
-        - build
+  tests:
+    jobs:
+      - test:
+          matrix:
+            parameters:
+              version: ["1.18", "1.17", "1.16", "1.15"]
