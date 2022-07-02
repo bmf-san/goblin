@@ -3,3 +3,4 @@ launch.json
 .vscode/
 goblin
 debug.test
+*.out
