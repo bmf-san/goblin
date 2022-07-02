@@ -5,13 +5,17 @@ help:
 
 .DEFAULT_GOAL := help
 
+.PHONY: lint
+lint: ## Run lint.
+	go vet -v ./...
+
 .PHONY: test
 test: ## Run tests.
 	go test -v -race ./...
 
 .PHONY: test-cover
-test-cover: ## Run tests with cover options.
-	go test -v -race -cover -coverprofile=c.out -covermode=atomic ./...
+test-cover: ## Run tests with cover options. ex. make test-cover OUT="c.out"
+	go test -v -race -cover -coverprofile=$(OUT) -covermode=atomic ./...
 
 .PHONY: test-benchmark
 test-benchmark: ## Run benchmark tests.
