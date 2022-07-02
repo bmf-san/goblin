@@ -160,7 +160,7 @@ func (t *tree) Search(method string, path string) (*result, error) {
 				ptn := getPattern(c)
 				reg, err := regC.Get(ptn)
 				if err != nil {
-					return nil, err
+					return nil, ErrNotFound
 				}
 				if reg.Match([]byte(p)) {
 					pn := getParamName(c)

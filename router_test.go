@@ -225,25 +225,100 @@ func TestRouter(t *testing.T) {
 	}
 }
 
-func TestHandleErr(t *testing.T) {
+func TestDefaultErrorHandler(t *testing.T) {
+	r := NewRouter()
+	r.Methods(http.MethodGet).Handler(`/defaulterrorhandler`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	r.Methods(http.MethodGet).Handler(`/methodnotallowed`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+
 	cases := []struct {
-		actual   int
-		expected int
+		path   string
+		method string
+		code   int
 	}{
 		{
-			actual:   handleErr(ErrMethodNotAllowed),
-			expected: http.StatusMethodNotAllowed,
+			path:   "/",
+			method: http.MethodGet,
+			code:   http.StatusNotFound,
 		},
 		{
-			actual:   handleErr(ErrNotFound),
-			expected: http.StatusNotFound,
+			path:   "/methodnotallowed",
+			method: http.MethodPost,
+			code:   http.StatusMethodNotAllowed,
 		},
 	}
 
 	for _, c := range cases {
-		if c.actual != c.expected {
-			t.Errorf("actual: %v expected: %v\n", c.actual, c.expected)
+		req := httptest.NewRequest(c.method, c.path, nil)
+		rec := httptest.NewRecorder()
+
+		r.ServeHTTP(rec, req)
+
+		if rec.Code != c.code {
+			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
 		}
 	}
+}
 
+func TestCustomErrorHandler(t *testing.T) {
+	r := NewRouter()
+	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "statusnotfound")
+	})
+	r.MethodNotAllowedHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		fmt.Fprintf(w, "methodnotallowed")
+	})
+	r.Methods(http.MethodGet).Handler(`/custommethodnotfound`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	r.Methods(http.MethodGet).Handler(`/custommethodnotallowed`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+
+	cases := []struct {
+		path   string
+		method string
+		code   int
+		body   string
+	}{
+		{
+			path:   "/",
+			method: http.MethodGet,
+			code:   http.StatusNotFound,
+			body:   "statusnotfound",
+		},
+		{
+			path:   "/custommethodnotallowed",
+			method: http.MethodPost,
+			code:   http.StatusMethodNotAllowed,
+			body:   "methodnotallowed",
+		},
+	}
+
+	for _, c := range cases {
+		req := httptest.NewRequest(c.method, c.path, nil)
+		rec := httptest.NewRecorder()
+
+		r.ServeHTTP(rec, req)
+
+		if rec.Code != c.code {
+			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
+		}
+
+		recBody, _ := ioutil.ReadAll(rec.Body)
+		body := string(recBody)
+		if body != c.body {
+			t.Errorf("actual: %v expected: %v\n", body, c.body)
+		}
+	}
+}
+
+func TestMethodNotAllowedHandler(t *testing.T) {
+	srv := httptest.NewServer(methodNotAllowedHandler())
+	defer srv.Close()
+	res, err := http.Get(srv.URL)
+	if err != nil {
+		t.Errorf("actual: %v expected: %v\n", err, nil)
+	}
+
+	if res.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("actual: %v expected: %v\n", res.StatusCode, http.StatusMethodNotAllowed)
+	}
 }

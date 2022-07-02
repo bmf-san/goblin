@@ -7,6 +7,18 @@ import (
 	goblin "github.com/bmf-san/goblin"
 )
 
+func customMethodNotFound() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "customMethodNotFound")
+	})
+}
+
+func customMethodAllowed() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "customMethodNotAllowed")
+	})
+}
+
 func first(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "first: before\n")
@@ -33,6 +45,8 @@ func third(next http.Handler) http.Handler {
 
 func main() {
 	r := goblin.NewRouter()
+	r.NotFoundHandler = customMethodNotFound()
+	r.MethodNotAllowedHandler = customMethodAllowed()
 
 	r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "/middleware\n")

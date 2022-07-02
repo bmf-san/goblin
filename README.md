@@ -16,6 +16,7 @@ A golang http router based on trie tree.
 - Lightweight
 - Fully compatible with net/http
 - No external dependencies
+- Support custom error handler
 - Support method-based routing
 - Support variables in URL paths
 - Support regexp route patterns
@@ -113,6 +114,31 @@ In the above case, when accessing `/foo/1`, it matches the routing defined first
 
 So it doesn't match the 2nd and 3rd defined routings.
 
+## Custom error handler.
+goblin supports custom error handler.
+
+You can be able to set your customized error handler.
+
+```go
+func customMethodNotFound() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "customMethodNotFound")
+	})
+}
+
+func customMethodAllowed() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "customMethodNotAllowed")
+	})
+}
+
+r := goblin.NewRouter()
+r.NotFoundHandler = customMethodNotFound()
+r.MethodNotAllowedHandler = customMethodAllowed()
+
+http.ListenAndServe(":9999", r)
+```
+
 ## Middlewares
 goblin supports middlewares.
 
@@ -145,9 +171,6 @@ func third(next http.Handler) http.Handler {
 	})
 }
 
-```
-
-```go
 r := goblin.NewRouter()
 
 r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -177,7 +200,9 @@ third: after
 second: after
 ```
 
-## Handling CORS Requests by using middleware
+### Handling CORS Requests by using middleware
+This is an example of using middleware.
+
 ```go
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -190,9 +215,7 @@ func CORS(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-```
 
-```go
 r.Methods(http.MethodGet).Use(first).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "CORS")
 }))
