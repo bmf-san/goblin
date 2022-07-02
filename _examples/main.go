@@ -13,7 +13,7 @@ func customMethodNotFound() http.Handler {
 	})
 }
 
-func customeMethodNotAllowed() http.Handler {
+func customMethodAllowed() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "customMethodNotAllowed")
 	})
@@ -46,7 +46,7 @@ func third(next http.Handler) http.Handler {
 func main() {
 	r := goblin.NewRouter()
 	r.NotFoundHandler = customMethodNotFound()
-	r.MethodNotAllowedHandler = customeMethodNotAllowed()
+	r.MethodNotAllowedHandler = customMethodAllowed()
 
 	r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "/middleware\n")

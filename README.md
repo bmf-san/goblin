@@ -126,7 +126,7 @@ func customMethodNotFound() http.Handler {
 	})
 }
 
-func customeMethodNotAllowed() http.Handler {
+func customMethodAllowed() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "customMethodNotAllowed")
 	})
@@ -134,7 +134,7 @@ func customeMethodNotAllowed() http.Handler {
 
 r := goblin.NewRouter()
 r.NotFoundHandler = customMethodNotFound()
-r.MethodNotAllowedHandler = customeMethodNotAllowed()
+r.MethodNotAllowedHandler = customMethodAllowed()
 
 http.ListenAndServe(":9999", r)
 ```
