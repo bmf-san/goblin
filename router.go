@@ -33,7 +33,7 @@ var (
 // NewRouter creates a new router.
 func NewRouter() *Router {
 	return &Router{
-		tree: NewTree(),
+		tree: newTree(),
 	}
 }
 

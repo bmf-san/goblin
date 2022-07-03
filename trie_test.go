@@ -16,7 +16,7 @@ func TestNewResult(t *testing.T) {
 }
 
 func TestNewTree(t *testing.T) {
-	actual := NewTree()
+	actual := newTree()
 	expected := &tree{
 		node: &node{
 			label:    pathRoot,
@@ -31,7 +31,7 @@ func TestNewTree(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	cases := []struct {
@@ -221,7 +221,7 @@ func TestSearchFailure(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		tree := NewTree()
+		tree := newTree()
 		for _, i := range c.insertItems {
 			tree.Insert(i.methods, i.path, i.handler, i.middlewares)
 		}
@@ -237,7 +237,7 @@ func TestSearchFailure(t *testing.T) {
 }
 
 func TestSearchOnlyRoot(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
@@ -294,7 +294,7 @@ func TestSearchOnlyRoot(t *testing.T) {
 }
 
 func TestSearchWithoutRoot(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -345,7 +345,7 @@ func TestSearchWithoutRoot(t *testing.T) {
 }
 
 func TestSearchCommonPrefix(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
@@ -420,7 +420,7 @@ func TestSearchCommonPrefix(t *testing.T) {
 }
 
 func TestSearchAllMethod(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -623,7 +623,7 @@ func TestSearchAllMethod(t *testing.T) {
 }
 
 func TestSearchPathCommonMultiMethods(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -772,7 +772,7 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 }
 
 func TestSearchTrailingSlash(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -903,7 +903,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 }
 
 func TestSearchStaticPath(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -1002,7 +1002,7 @@ func TestSearchStaticPath(t *testing.T) {
 }
 
 func TestSearchPathWithParams(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	idHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -1109,7 +1109,7 @@ func TestSearchPathWithParams(t *testing.T) {
 }
 
 func TestSearchPriority(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -1179,7 +1179,7 @@ func TestSearchPriority(t *testing.T) {
 }
 
 func TestSearchRegexp(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootWildCardHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
@@ -1429,7 +1429,7 @@ func TestSearchRegexp(t *testing.T) {
 }
 
 func TestSearchWildCardRegexp(t *testing.T) {
-	tree := NewTree()
+	tree := newTree()
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootWildCardHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
