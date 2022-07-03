@@ -103,12 +103,6 @@ type item struct {
 	path   string
 }
 
-// caseOnlySuccess is a struct for testOnlySuccess.
-type caseOnlySuccess struct {
-	item     *item
-	expected *result
-}
-
 // caseWithFailure is a struct for testWithFailure.
 type caseWithFailure struct {
 	hasError bool

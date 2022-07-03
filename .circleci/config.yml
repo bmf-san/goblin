@@ -27,9 +27,25 @@ jobs:
           command: >
             go mod download
       - run:
-          name: "Run go lint"
+          name: "Install tools"
           command: >
-            make lint
+            if [[ << parameters.version >> = 1.18 ]]; then
+              make install-staticcheck
+            fi
+      - run:
+          name: "Run gofmt"
+          command: >
+            make gofmt
+      - run:
+          name: "Run vet"
+          command: >
+            make vet
+      - run:
+          name: "Run go staticcheck"
+          command: >
+            if [[ << parameters.version >> = 1.18 ]]; then
+              make staticcheck
+            fi
       - run:
           name: "Run go test"
           command: >
