@@ -176,7 +176,7 @@ func (t *tree) Search(method string, path string) (*result, error) {
 				return nil, ErrNotFound
 			}
 		}
-		if isParamMatch == false {
+		if !isParamMatch {
 			// no matching param was found.
 			return nil, ErrNotFound
 		}

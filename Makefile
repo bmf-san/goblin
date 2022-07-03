@@ -5,9 +5,23 @@ help:
 
 .DEFAULT_GOAL := help
 
-.PHONY: lint
-lint: ## Run lint.
+.PHONY: install-staticcheck
+install-staticcheck: ## Install staticcheck.
+ifeq ($(shell command -v staticcheck 2> /dev/null),)
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+endif
+
+.PHONY: gofmt
+gofmt: ## Run gofmt.
+	test -z "$(gofmt -s -l . | tee /dev/stderr)"
+
+.PHONY: vet
+vet: ## Run vet.
 	go vet -v ./...
+
+.PHONY: staticcheck
+staticcheck: ## Run staticcheck.
+	staticcheck ./...
 
 .PHONY: test
 test: ## Run tests.
