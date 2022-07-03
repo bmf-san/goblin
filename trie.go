@@ -55,8 +55,8 @@ const (
 	ptnWildcard       string = "(.+)"
 )
 
-// NewTree creates a new trie tree.
-func NewTree() *tree {
+// newTree creates a new trie tree.
+func newTree() *tree {
 	return &tree{
 		node: &node{
 			label:    pathRoot,

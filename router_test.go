@@ -12,7 +12,7 @@ import (
 func TestNewRouter(t *testing.T) {
 	actual := NewRouter()
 	expected := &Router{
-		tree: NewTree(),
+		tree: newTree(),
 	}
 
 	if !reflect.DeepEqual(actual, expected) {
