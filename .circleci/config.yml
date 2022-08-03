@@ -70,4 +70,4 @@ workflows:
       - test:
           matrix:
             parameters:
-              version: ["1.18", "1.17", "1.16", "1.15"]
+              version: ["1.19", "1.18", "1.17", "1.16", "1.15"]
