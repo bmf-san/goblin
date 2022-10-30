@@ -40,7 +40,7 @@ r := goblin.NewRouter()
 
 r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "/")
-})
+}))
 
 r.Methods(http.MethodGet, http.MethodPost).Handler(`/methods`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     if r.Method == http.MethodGet {
@@ -49,7 +49,7 @@ r.Methods(http.MethodGet, http.MethodPost).Handler(`/methods`, http.HandlerFunc(
     if r.Method == http.MethodPost {
         fmt.Fprintf(w, "POST")
     }
-})
+}))
 
 http.ListenAndServe(":9999", r)
 ```
