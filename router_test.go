@@ -322,3 +322,38 @@ func TestMethodNotAllowedHandler(t *testing.T) {
 		t.Errorf("actual: %v expected: %v\n", res.StatusCode, http.StatusMethodNotAllowed)
 	}
 }
+
+func TestCleanPath(t *testing.T) {
+	cases := []struct {
+		path     string
+		expected string
+	}{
+		{
+			path:     "",
+			expected: "/",
+		},
+		{
+			path:     "path",
+			expected: "/path",
+		},
+		{
+			path:     "/",
+			expected: "/",
+		},
+		{
+			path:     "/path/trailingslash/",
+			expected: "/path/trailingslash/",
+		},
+		{
+			path:     "path/trailingslash//",
+			expected: "/path/trailingslash/",
+		},
+	}
+
+	for _, c := range cases {
+		actual := cleanPath(c.path)
+		if actual != c.expected {
+			t.Errorf("actual: %v expected: %v\n", actual, c.expected)
+		}
+	}
+}
