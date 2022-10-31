@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"path"
+	"strings"
 )
 
 // Router represents the router which handles routing.
@@ -66,7 +68,7 @@ func (r *Router) Handle() {
 // pattern most closely matches the request URL.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
-	path := req.URL.Path
+	path := cleanPath(req.URL.Path)
 	result, err := r.tree.Search(method, path)
 	if err == ErrNotFound {
 		if r.NotFoundHandler == nil {
@@ -102,4 +104,28 @@ func methodNotAllowedHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	})
+}
+
+// cleanPath returns the canonical path for p, eliminating . and .. elements.
+// This method borrowed from from net/http package.
+// see https://cs.opensource.google/go/go/+/master:src/net/http/server.go;l=2310;bpv=1;bpt=1
+func cleanPath(p string) string {
+	if p == "" {
+		return "/"
+	}
+	if p[0] != '/' {
+		p = "/" + p
+	}
+	np := path.Clean(p)
+	// path.Clean removes trailing slash except for root;
+	// put the trailing slash back if necessary.
+	if p[len(p)-1] == '/' && np != "/" {
+		// Fast path for common case of p being the string we want:
+		if len(p) == len(np)+1 && strings.HasPrefix(p, np) {
+			np = p
+		} else {
+			np += "/"
+		}
+	}
+	return np
 }
