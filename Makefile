@@ -32,5 +32,15 @@ test-cover: ## Run tests with cover options. ex. make test-cover OUT="c.out"
 	go test -v -race -cover -coverprofile=$(OUT) -covermode=atomic ./...
 
 .PHONY: test-benchmark
-test-benchmark: ## Run benchmark tests.
-	go test -bench=. -cpu=4 -benchmem
+test-benchmark: ## Run benchmark tests. ex. make test-benchmark CPU=4 COUNT=3
+	go test -bench=. -cpu=$(CPU) -benchmem -count=$(COUNT)
+
+.PHONY: test-benchmark-cpuprofile
+test-benchmark-cpuprofile: ## Run benchmark tests with cpuprofile and run pprof.
+	go test -bench . -cpuprofile cpu.out
+	go tool pprof -http=":8888" cpu.out
+
+.PHONY: test-benchmark-memprofile
+test-benchmark-memprofile: ## Run benchmark tests with memprofile and run pprof.
+	go test -bench . -memprofile mem.out
+	go tool pprof -http=":8889" mem.out

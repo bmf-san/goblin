@@ -47,8 +47,6 @@ func newResult() *result {
 }
 
 const (
-	pathRoot          string = "/"
-	pathDelimiter     string = "/"
 	paramDelimiter    string = ":"
 	leftPtnDelimiter  string = "["
 	rightPtnDelimiter string = "]"
@@ -59,7 +57,7 @@ const (
 func newTree() *tree {
 	return &tree{
 		node: &node{
-			label:    pathRoot,
+			label:    "/",
 			actions:  make(map[string]*action),
 			children: make(map[string]*node),
 		},
@@ -69,7 +67,7 @@ func newTree() *tree {
 // Insert inserts a route definition to tree.
 func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) error {
 	curNode := t.node
-	if path == pathRoot {
+	if path == "/" {
 		curNode.label = path
 		for _, method := range methods {
 			curNode.actions[method] = &action{
@@ -181,7 +179,7 @@ func (t *tree) Search(method string, path string) (*result, error) {
 			return nil, ErrNotFound
 		}
 	}
-	if path == pathRoot {
+	if path == "/" {
 		if len(curNode.actions) == 0 {
 			// no matching handler and middlewares was found.
 			return nil, ErrNotFound
@@ -240,14 +238,11 @@ func getParamName(label string) string {
 	return label[leftI+1 : rightI]
 }
 
-// explodePath removes an empty value in slice.
+// explodePath converts a path to a slice split　by path delimiter.
+// path expects a path processed by cleanPath.
 func explodePath(path string) []string {
-	s := strings.Split(path, pathDelimiter)
-	var r []string
-	for _, str := range s {
-		if str != "" {
-			r = append(r, str)
-		}
+	splitFn := func(c rune) bool {
+		return c == '/'
 	}
-	return r
+	return strings.FieldsFunc(path, splitFn)
 }
