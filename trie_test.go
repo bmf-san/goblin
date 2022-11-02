@@ -19,7 +19,7 @@ func TestNewTree(t *testing.T) {
 	actual := newTree()
 	expected := &tree{
 		node: &node{
-			label:    pathRoot,
+			label:    "/",
 			actions:  make(map[string]*action),
 			children: make(map[string]*node),
 		},
@@ -1610,19 +1610,19 @@ func TestExplodePath(t *testing.T) {
 	}{
 		{
 			actual:   explodePath(""),
-			expected: nil,
+			expected: []string{},
 		},
 		{
 			actual:   explodePath("/"),
-			expected: nil,
+			expected: []string{},
 		},
 		{
 			actual:   explodePath("//"),
-			expected: nil,
+			expected: []string{},
 		},
 		{
 			actual:   explodePath("///"),
-			expected: nil,
+			expected: []string{},
 		},
 		{
 			actual:   explodePath("/foo"),

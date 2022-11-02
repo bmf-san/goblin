@@ -333,6 +333,14 @@ func TestCleanPath(t *testing.T) {
 			expected: "/",
 		},
 		{
+			path:     "//",
+			expected: "/",
+		},
+		{
+			path:     "///",
+			expected: "/",
+		},
+		{
 			path:     "path",
 			expected: "/path",
 		},
