@@ -69,7 +69,7 @@ func (r *Router) Handle() {
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	path := cleanPath(req.URL.Path)
-	result, err := r.tree.Search(method, path)
+	action, params, err := r.tree.Search(method, path)
 	if err == ErrNotFound {
 		if r.NotFoundHandler == nil {
 			http.NotFoundHandler().ServeHTTP(w, req)
@@ -88,12 +88,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	h := result.actions.handler
-	if result.actions.middlewares != nil {
-		h = result.actions.middlewares.then(result.actions.handler)
+	h := action.handler
+	if action.middlewares != nil {
+		h = action.middlewares.then(action.handler)
 	}
-	if result.params != nil {
-		ctx := context.WithValue(req.Context(), ParamsKey, result.params)
+	if params != nil {
+		ctx := context.WithValue(req.Context(), ParamsKey, params)
 		req = req.WithContext(ctx)
 	}
 	h.ServeHTTP(w, req)

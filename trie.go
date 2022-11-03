@@ -35,17 +35,6 @@ type param struct {
 // params is parameters.
 type params []*param
 
-// result is a search result.
-type result struct {
-	actions *action
-	params  params
-}
-
-// newResult creates a new result.
-func newResult() *result {
-	return &result{}
-}
-
 const (
 	paramDelimiter    string = ":"
 	leftPtnDelimiter  string = "["
@@ -135,8 +124,7 @@ func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 var regC = &regCache{}
 
 // Search searches a path from a tree.
-func (t *tree) Search(method string, path string) (*result, error) {
-	result := newResult()
+func (t *tree) Search(method string, path string) (*action, params, error) {
 	var params params
 	curNode := t.node
 	for _, p := range explodePath(path) {
@@ -148,7 +136,7 @@ func (t *tree) Search(method string, path string) (*result, error) {
 		if len(curNode.children) == 0 {
 			if curNode.label != p {
 				// no matching path was found.
-				return nil, ErrNotFound
+				return nil, nil, ErrNotFound
 			}
 			break
 		}
@@ -158,7 +146,7 @@ func (t *tree) Search(method string, path string) (*result, error) {
 				ptn := getPattern(c)
 				reg, err := regC.Get(ptn)
 				if err != nil {
-					return nil, ErrNotFound
+					return nil, nil, ErrNotFound
 				}
 				if reg.Match([]byte(p)) {
 					pn := getParamName(c)
@@ -171,27 +159,26 @@ func (t *tree) Search(method string, path string) (*result, error) {
 					break
 				}
 				// no matching param was found.
-				return nil, ErrNotFound
+				return nil, nil, ErrNotFound
 			}
 		}
 		if !isParamMatch {
 			// no matching param was found.
-			return nil, ErrNotFound
+			return nil, nil, ErrNotFound
 		}
 	}
 	if path == "/" {
 		if len(curNode.actions) == 0 {
 			// no matching handler and middlewares was found.
-			return nil, ErrNotFound
+			return nil, nil, ErrNotFound
 		}
 	}
-	result.actions = curNode.actions[method]
-	if result.actions == nil {
+	actions := curNode.actions[method]
+	if actions == nil {
 		// no matching handler and middlewares was found.
-		return nil, ErrMethodNotAllowed
+		return nil, nil, ErrMethodNotAllowed
 	}
-	result.params = params
-	return result, nil
+	return actions, params, nil
 }
 
 // getPattern gets a pattern from a label.

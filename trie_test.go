@@ -6,15 +6,6 @@ import (
 	"testing"
 )
 
-func TestNewResult(t *testing.T) {
-	actual := newResult()
-	expected := &result{}
-
-	if !reflect.DeepEqual(actual, expected) {
-		t.Errorf("actual: %v expected: %v\n", actual, expected)
-	}
-}
-
 func TestNewTree(t *testing.T) {
 	actual := newTree()
 	expected := &tree{
@@ -105,9 +96,10 @@ type item struct {
 
 // caseWithFailure is a struct for testWithFailure.
 type caseWithFailure struct {
-	hasError bool
-	item     *item
-	expected *result
+	hasError       bool
+	item           *item
+	expectedAction *action
+	expectedParams params
 }
 
 // insertItem is a struct for insert method.
@@ -219,9 +211,9 @@ func TestSearchFailure(t *testing.T) {
 		for _, i := range c.insertItems {
 			tree.Insert(i.methods, i.path, i.handler, i.middlewares)
 		}
-		actual, err := tree.Search(c.searchItem.method, c.searchItem.path)
-		if actual != nil {
-			t.Fatalf("actual: %v expected err: %v", actual, err)
+		actualAction, actualParams, err := tree.Search(c.searchItem.method, c.searchItem.path)
+		if actualAction != nil || actualParams != nil {
+			t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
 		}
 
 		if err != c.expected {
@@ -244,13 +236,11 @@ func TestSearchOnlyRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -258,13 +248,11 @@ func TestSearchOnlyRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "//",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -272,7 +260,8 @@ func TestSearchOnlyRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -280,7 +269,8 @@ func TestSearchOnlyRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 	}
 
@@ -303,13 +293,11 @@ func TestSearchWithoutRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -317,13 +305,11 @@ func TestSearchWithoutRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     barHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     barHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -331,7 +317,8 @@ func TestSearchWithoutRoot(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 	}
 
@@ -352,13 +339,11 @@ func TestSearchCommonPrefix(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -366,7 +351,8 @@ func TestSearchCommonPrefix(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -374,7 +360,8 @@ func TestSearchCommonPrefix(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/b",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -382,7 +369,8 @@ func TestSearchCommonPrefix(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/f",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -390,7 +378,8 @@ func TestSearchCommonPrefix(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/fo",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -398,7 +387,8 @@ func TestSearchCommonPrefix(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/fooo",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -406,7 +396,8 @@ func TestSearchCommonPrefix(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 	}
 
@@ -449,13 +440,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootGetHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootGetHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -463,13 +452,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootPostHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootPostHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -477,13 +464,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPut,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootPutHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootPutHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -491,13 +476,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPatch,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootPatchHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootPatchHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -505,13 +488,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodDelete,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootDeleteHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootDeleteHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -519,13 +500,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootOptionsHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootOptionsHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -533,13 +512,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooGetHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooGetHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -547,13 +524,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooPostHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooPostHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -561,13 +536,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPut,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooPutHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooPutHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -575,13 +548,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodPatch,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooPatchHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooPatchHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -589,13 +560,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodDelete,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooDeleteHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooDeleteHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -603,13 +572,11 @@ func TestSearchAllMethod(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooOptionsHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooOptionsHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 	}
 
@@ -640,13 +607,11 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootGetHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootGetHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -654,13 +619,11 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootPostHandler,
-					middlewares: []middleware{second},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootPostHandler,
+				middlewares: []middleware{second},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -668,13 +631,11 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodDelete,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootDeleteHandler,
-					middlewares: []middleware{third},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootDeleteHandler,
+				middlewares: []middleware{third},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -682,13 +643,11 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodPatch,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootPatchHandler,
-					middlewares: []middleware{first, second, third},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootPatchHandler,
+				middlewares: []middleware{first, second, third},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -696,13 +655,11 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooGetPostHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooGetPostHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -710,13 +667,11 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooGetPostHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooGetPostHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -724,13 +679,12 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarGetPostDeleteHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     fooBarGetPostDeleteHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -738,13 +692,12 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarGetPostDeleteHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     fooBarGetPostDeleteHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -752,13 +705,12 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodDelete,
 				path:   "/foo/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarGetPostDeleteHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     fooBarGetPostDeleteHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 	}
 
@@ -785,13 +737,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     rootHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -799,13 +750,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "//",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     rootHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -813,13 +763,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     fooHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -827,13 +776,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     fooHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -841,13 +789,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     barHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     barHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -855,13 +802,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     barHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     barHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -869,13 +815,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     fooBarHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -883,13 +828,12 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+
+			expectedAction: &action{
+				handler:     fooBarHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 	}
 
@@ -916,13 +860,11 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -930,13 +872,11 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -944,13 +884,11 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     barHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     barHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -958,7 +896,8 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/baz",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -966,13 +905,11 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooBarHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -980,7 +917,8 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/baz",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -988,7 +926,8 @@ func TestSearchStaticPath(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/baz",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 	}
 
@@ -1015,16 +954,14 @@ func TestSearchPathWithParams(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/1",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     idHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
+			expectedAction: &action{
+				handler:     idHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
 			},
 		},
@@ -1034,16 +971,14 @@ func TestSearchPathWithParams(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooIDHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
+			expectedAction: &action{
+				handler:     fooIDHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
 			},
 		},
@@ -1053,20 +988,18 @@ func TestSearchPathWithParams(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1/john",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooIDNameHandler,
-					middlewares: []middleware{first},
+			expectedAction: &action{
+				handler:     fooIDNameHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
-					&param{
-						key:   "name",
-						value: "john",
-					},
+				&param{
+					key:   "name",
+					value: "john",
 				},
 			},
 		},
@@ -1076,24 +1009,22 @@ func TestSearchPathWithParams(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1/john/2020",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooIDNameDateHandler,
-					middlewares: []middleware{first},
+			expectedAction: &action{
+				handler:     fooIDNameDateHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
-					&param{
-						key:   "name",
-						value: "john",
-					},
-					&param{
-						key:   "date",
-						value: "2020",
-					},
+				&param{
+					key:   "name",
+					value: "john",
+				},
+				&param{
+					key:   "date",
+					value: "2020",
 				},
 			},
 		},
@@ -1126,13 +1057,11 @@ func TestSearchPriority(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootPriorityHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootPriorityHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1140,13 +1069,11 @@ func TestSearchPriority(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooPriorityHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooPriorityHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1154,16 +1081,14 @@ func TestSearchPriority(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/1",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     IDPriorityHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
+			expectedAction: &action{
+				handler:     IDPriorityHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
 			},
 		},
@@ -1200,13 +1125,11 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -1214,7 +1137,8 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1222,16 +1146,14 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/wildcard",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootWildCardHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "*",
-						value: "wildcard",
-					},
+			expectedAction: &action{
+				handler:     rootWildCardHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "*",
+					value: "wildcard",
 				},
 			},
 		},
@@ -1241,16 +1163,14 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/1234",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootWildCardHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "*",
-						value: "1234",
-					},
+			expectedAction: &action{
+				handler:     rootWildCardHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "*",
+					value: "1234",
 				},
 			},
 		},
@@ -1260,13 +1180,11 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: true,
@@ -1274,7 +1192,8 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/bar",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1282,16 +1201,14 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootWildCardHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "*",
-						value: "bar",
-					},
+			expectedAction: &action{
+				handler:     rootWildCardHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "*",
+					value: "bar",
 				},
 			},
 		},
@@ -1301,16 +1218,14 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooIDHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
+			expectedAction: &action{
+				handler:     fooIDHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
 			},
 		},
@@ -1320,7 +1235,8 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/notnumber",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1328,20 +1244,18 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1/john",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooIDNameHandler,
-					middlewares: []middleware{first},
+			expectedAction: &action{
+				handler:     fooIDNameHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
-					&param{
-						key:   "name",
-						value: "john",
-					},
+				&param{
+					key:   "name",
+					value: "john",
 				},
 			},
 		},
@@ -1351,7 +1265,8 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/1/1",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1359,13 +1274,11 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     fooBarHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1373,16 +1286,14 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/1",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarIDHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
+			expectedAction: &action{
+				handler:     fooBarIDHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
 			},
 		},
@@ -1392,7 +1303,8 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/bar/1",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1400,20 +1312,18 @@ func TestSearchRegexp(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar/1/john",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     fooBarIDNameHandler,
-					middlewares: []middleware{first},
+			expectedAction: &action{
+				handler:     fooBarIDNameHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "id",
+					value: "1",
 				},
-				params: params{
-					&param{
-						key:   "id",
-						value: "1",
-					},
-					&param{
-						key:   "name",
-						value: "john",
-					},
+				&param{
+					key:   "name",
+					value: "john",
 				},
 			},
 		},
@@ -1438,13 +1348,11 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{},
+			expectedAction: &action{
+				handler:     rootHandler,
+				middlewares: []middleware{first},
 			},
+			expectedParams: params{},
 		},
 		{
 			hasError: false,
@@ -1452,16 +1360,14 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/wildcard",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootWildCardHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "*",
-						value: "wildcard",
-					},
+			expectedAction: &action{
+				handler:     rootWildCardHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "*",
+					value: "wildcard",
 				},
 			},
 		},
@@ -1471,16 +1377,14 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/1234",
 			},
-			expected: &result{
-				actions: &action{
-					handler:     rootWildCardHandler,
-					middlewares: []middleware{first},
-				},
-				params: params{
-					&param{
-						key:   "*",
-						value: "1234",
-					},
+			expectedAction: &action{
+				handler:     rootWildCardHandler,
+				middlewares: []middleware{first},
+			},
+			expectedParams: params{
+				&param{
+					key:   "*",
+					value: "1234",
 				},
 			},
 		},
@@ -1490,7 +1394,8 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				method: http.MethodOptions,
 				path:   "/1234/foo",
 			},
-			expected: nil,
+			expectedAction: nil,
+			expectedParams: params{},
 		},
 	}
 
@@ -1499,45 +1404,55 @@ func TestSearchWildCardRegexp(t *testing.T) {
 
 func testWithFailure(t *testing.T, tree *tree, cases []caseWithFailure) {
 	for _, c := range cases {
-		actual, err := tree.Search(c.item.method, c.item.path)
+		actualAction, actualParams, err := tree.Search(c.item.method, c.item.path)
 
 		if c.hasError {
 			if err == nil {
-				t.Fatalf("actual: %v expected err: %v", actual, err)
+				t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
 			}
 
-			if actual != c.expected {
-				t.Errorf("actual:%v expected:%v", actual, c.expected)
+			if actualAction != c.expectedAction {
+				t.Errorf("actualAction:%v expectedAction:%v", actualAction, c.expectedAction)
+			}
+
+			if len(actualParams) != len(c.expectedParams) {
+				t.Errorf("actualParams: %v expectedParams: %v\n", len(actualParams), len(c.expectedParams))
+			}
+
+			for i, param := range actualParams {
+				if !reflect.DeepEqual(param, c.expectedParams[i]) {
+					t.Errorf("actualParams: %v expectedParams: %v\n", param, c.expectedParams[i])
+				}
 			}
 
 			continue
 		}
 
 		if err != nil {
-			t.Fatalf("err: %v actual: %v expected: %v\n", err, actual, c.expected)
+			t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
 		}
 
-		if reflect.ValueOf(actual.actions.handler) != reflect.ValueOf(c.expected.actions.handler) {
-			t.Errorf("actual:%v expected:%v", actual.actions.handler, c.expected.actions.handler)
+		if reflect.ValueOf(actualAction.handler) != reflect.ValueOf(c.expectedAction.handler) {
+			t.Errorf("actualActionHandler:%v expectedActionHandler:%v", actualAction.handler, c.expectedAction.handler)
 		}
 
-		if len(actual.actions.middlewares) != len(c.expected.actions.middlewares) {
-			t.Errorf("actual: %v expected: %v\n", len(actual.actions.middlewares), len(c.expected.actions.middlewares))
+		if len(actualAction.middlewares) != len(c.expectedAction.middlewares) {
+			t.Errorf("actualActionMiddlewares: %v expectedActionsMiddleware: %v\n", len(actualAction.middlewares), len(c.expectedAction.middlewares))
 		}
 
-		for i, mws := range actual.actions.middlewares {
-			if reflect.ValueOf(mws) != reflect.ValueOf(c.expected.actions.middlewares[i]) {
-				t.Errorf("actual: %v expected: %v\n", mws, c.expected.actions.middlewares[i])
+		for i, mws := range actualAction.middlewares {
+			if reflect.ValueOf(mws) != reflect.ValueOf(c.expectedAction.middlewares[i]) {
+				t.Errorf("actualActionsMiddleware: %v expectedActionsMiddleware: %v\n", mws, c.expectedAction.middlewares[i])
 			}
 		}
 
-		if len(actual.params) != len(c.expected.params) {
-			t.Errorf("actual: %v expected: %v\n", len(actual.params), len(c.expected.params))
+		if len(actualParams) != len(c.expectedParams) {
+			t.Errorf("actualParams: %v expectedParams: %v\n", len(actualParams), len(c.expectedParams))
 		}
 
-		for i, param := range actual.params {
-			if !reflect.DeepEqual(param, c.expected.params[i]) {
-				t.Errorf("actual: %v expected: %v\n", param, c.expected.params[i])
+		for i, param := range actualParams {
+			if !reflect.DeepEqual(param, c.expectedParams[i]) {
+				t.Errorf("actualParam: %v expectedParam: %v\n", param, c.expectedParams[i])
 			}
 		}
 	}
