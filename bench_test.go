@@ -42,7 +42,6 @@ func benchmarkWildcard(n int, b *testing.B) {
 	for i := 0; i < n; i++ {
 		path += wildcard
 		rpath += pathN
-
 	}
 
 	r.Methods(http.MethodGet).Handler(path, handler())
@@ -68,7 +67,6 @@ func benchmarkRegexp(n int, b *testing.B) {
 	for i := 0; i < n; i++ {
 		path += wildcard
 		rpath += pathN
-
 	}
 
 	r.Methods(http.MethodGet).Handler(path, handler())
