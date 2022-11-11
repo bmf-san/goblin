@@ -53,14 +53,14 @@ func TestSearchFailure(t *testing.T) {
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	cases := []struct {
-		insertItems []*insertItem
+		insertItems []insertItem
 		searchItem  *searchItem
 		expected    error
 	}{
 		{
 			// no matching path was found.
-			insertItems: []*insertItem{
-				&insertItem{
+			insertItems: []insertItem{
+				{
 					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
@@ -75,8 +75,8 @@ func TestSearchFailure(t *testing.T) {
 		},
 		{
 			// no matching param was found.
-			insertItems: []*insertItem{
-				&insertItem{
+			insertItems: []insertItem{
+				{
 					methods:     []string{http.MethodGet},
 					path:        `/foo/:id[^\d+$]`,
 					handler:     fooHandler,
@@ -91,8 +91,8 @@ func TestSearchFailure(t *testing.T) {
 		},
 		{
 			// no matching param was found.
-			insertItems: []*insertItem{
-				&insertItem{
+			insertItems: []insertItem{
+				{
 					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
@@ -107,8 +107,8 @@ func TestSearchFailure(t *testing.T) {
 		},
 		{
 			// no matching handler and middlewares was found.
-			insertItems: []*insertItem{
-				&insertItem{
+			insertItems: []insertItem{
+				{
 					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
@@ -123,8 +123,8 @@ func TestSearchFailure(t *testing.T) {
 		},
 		{
 			// no matching handler and middlewares was found.
-			insertItems: []*insertItem{
-				&insertItem{
+			insertItems: []insertItem{
+				{
 					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
@@ -892,7 +892,7 @@ func TestSearchPathWithParams(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
@@ -909,7 +909,7 @@ func TestSearchPathWithParams(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
@@ -926,11 +926,11 @@ func TestSearchPathWithParams(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
-				&param{
+				param{
 					key:   "name",
 					value: "john",
 				},
@@ -947,15 +947,15 @@ func TestSearchPathWithParams(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
-				&param{
+				param{
 					key:   "name",
 					value: "john",
 				},
-				&param{
+				param{
 					key:   "date",
 					value: "2020",
 				},
@@ -1019,7 +1019,7 @@ func TestSearchPriority(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
@@ -1084,7 +1084,7 @@ func TestSearchRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "*",
 					value: "wildcard",
 				},
@@ -1101,7 +1101,7 @@ func TestSearchRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "*",
 					value: "1234",
 				},
@@ -1139,7 +1139,7 @@ func TestSearchRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "*",
 					value: "bar",
 				},
@@ -1156,7 +1156,7 @@ func TestSearchRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
@@ -1182,11 +1182,11 @@ func TestSearchRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
-				&param{
+				param{
 					key:   "name",
 					value: "john",
 				},
@@ -1224,7 +1224,7 @@ func TestSearchRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
@@ -1250,11 +1250,11 @@ func TestSearchRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "id",
 					value: "1",
 				},
-				&param{
+				param{
 					key:   "name",
 					value: "john",
 				},
@@ -1298,7 +1298,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "*",
 					value: "wildcard",
 				},
@@ -1315,7 +1315,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 				middlewares: []middleware{first},
 			},
 			expectedParams: params{
-				&param{
+				param{
 					key:   "*",
 					value: "1234",
 				},

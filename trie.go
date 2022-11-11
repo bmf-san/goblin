@@ -33,7 +33,7 @@ type param struct {
 }
 
 // params is parameters.
-type params []*param
+type params []param
 
 const (
 	paramDelimiter    string = ":"
@@ -148,7 +148,7 @@ func (t *tree) Search(method string, path string) (*action, params, error) {
 				}
 				if reg.Match([]byte(p)) {
 					pn := getParamName(c)
-					params = append(params, &param{
+					params = append(params, param{
 						key:   pn,
 						value: p,
 					})
