@@ -5,23 +5,44 @@ help:
 
 .DEFAULT_GOAL := help
 
-.PHONY: install-staticcheck
-install-staticcheck: ## Install staticcheck.
+.PHONY: install-tools
+install-tools: ## Install staticcheck.
 ifeq ($(shell command -v staticcheck 2> /dev/null),)
 	go install honnef.co/go/tools/cmd/staticcheck@latest
+endif
+ifeq ($(shell command -v goimports 2> /dev/null),)
+	go install golang.org/x/tools/cmd/goimports@latest
+endif
+ifeq ($(shell command -v errcheck 2> /dev/null),)
+	go install github.com/kisielk/errcheck@latest
+endif
+ifeq ($(shell command -v gosec 2> /dev/null),)
+	go install github.com/securego/gosec/v2/cmd/gosec@latest
 endif
 
 .PHONY: gofmt
 gofmt: ## Run gofmt.
 	test -z "$(gofmt -s -l . | tee /dev/stderr)"
 
+.PHONY: goimports
+goimports: ## Run goimports.
+	goimports -d $(find . -type f -name '*.go' -not -path "./vendor/*")
+
 .PHONY: vet
 vet: ## Run vet.
 	go vet -v ./...
 
+.PHONY: errcheck
+errcheck: ## Run errcheck.
+	errcheck -exclude errcheck_excludes.txt ./...
+
 .PHONY: staticcheck
 staticcheck: ## Run staticcheck.
 	staticcheck ./...
+
+.PHONY: gosec
+gosec: ## Run gosec.
+	gosec -exclude-dir=_examples ./...
 
 .PHONY: test
 test: ## Run tests.

@@ -30,7 +30,7 @@ jobs:
           name: "Install tools"
           command: >
             if [[ << parameters.version >> = 1.18 ]]; then
-              make install-staticcheck
+              make install-tools
             fi
       - run:
           name: "Run gofmt"
@@ -41,10 +41,22 @@ jobs:
           command: >
             make vet
       - run:
+          name: "Run errcheck"
+          command: >
+            if [[ << parameters.version >> = 1.18 ]]; then
+              make errcheck
+            fi
+      - run:
           name: "Run go staticcheck"
           command: >
             if [[ << parameters.version >> = 1.18 ]]; then
               make staticcheck
+            fi
+      - run:
+          name: "Run gosec"
+          command: >
+            if [[ << parameters.version >> = 1.18 ]]; then
+              make gosec
             fi
       - run:
           name: "Run go test"

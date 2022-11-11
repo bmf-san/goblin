@@ -54,7 +54,7 @@ func newTree() *tree {
 }
 
 // Insert inserts a route definition to tree.
-func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) error {
+func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) {
 	curNode := t.node
 	if path == "/" {
 		curNode.label = path
@@ -64,7 +64,7 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 				handler:     handler,
 			}
 		}
-		return nil
+		return
 	}
 	ep := explodePath(path)
 	for i, p := range ep {
@@ -94,8 +94,6 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 			break
 		}
 	}
-
-	return nil
 }
 
 // regCache represents the cache for a regular expression.
