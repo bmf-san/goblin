@@ -2,5 +2,6 @@ launch.json
 .DS_STORE
 .vscode/
 goblin
+goblin.test
 debug.test
 *.out
