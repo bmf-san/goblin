@@ -7,11 +7,11 @@ import (
 
 func TestGetParam(t *testing.T) {
 	params := &params{
-		&param{
+		param{
 			key:   "id",
 			value: "123",
 		},
-		&param{
+		param{
 			key:   "name",
 			value: "john",
 		},
