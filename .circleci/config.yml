@@ -20,59 +20,49 @@ jobs:
       - checkout
       - run:
           name: "Go version"
-          command: >
-            go version
+          command: go version
       - run:
           name: "Fetch dependencies"
-          command: >
-            go mod download
-      - run:
-          name: "Install tools"
-          command: >
-            if [[ << parameters.version >> = 1.18 ]]; then
-              make install-tools
-            fi
+          command: go mod download
       - run:
           name: "Run gofmt"
-          command: >
-            make gofmt
+          command: make gofmt
       - run:
           name: "Run vet"
-          command: >
-            make vet
-      - run:
-          name: "Run errcheck"
-          command: >
-            if [[ << parameters.version >> = 1.18 ]]; then
-              make errcheck
-            fi
-      - run:
-          name: "Run go staticcheck"
-          command: >
-            if [[ << parameters.version >> = 1.18 ]]; then
-              make staticcheck
-            fi
-      - run:
-          name: "Run gosec"
-          command: >
-            if [[ << parameters.version >> = 1.18 ]]; then
-              make gosec
-            fi
+          command: make vet
       - run:
           name: "Run go test"
-          command: >
-            make test
+          command: make test
+      - when:
+          condition:
+            or:
+              - equal: [ '1.19', << parameters.version >> ]
+              - equal: [ '1.18', << parameters.version >> ]
+          steps:
+            - run:
+                name: "Install tools"
+                command: make install-tools
+            - run:
+                name: "Run errcheck"
+                command: make errcheck
+            - run:
+                name: "Run go staticcheck"
+                command: make staticcheck
+            - run:
+                name: "Run gosec"
+                command: make gosec
+            - run:
+                name: "Run benchstat"
+                command: make benchstat
       - run:
           name: Build go
           command: go build
       - run:
           name: Create a temporary directory for artifacts
-          command: |
-              mkdir -p /tmp/artifacts
+          command: mkdir -p /tmp/artifacts
       - run:
           name: Generate coverage
-          command: |
-              make test-cover OUT=<< parameters.version >>.out
+          command: make test-cover OUT=<< parameters.version >>.out
       - codecov/upload:
           file: ./<< parameters.version >>.out
 
@@ -82,4 +72,4 @@ workflows:
       - test:
           matrix:
             parameters:
-              version: ["1.19", "1.18", "1.17", "1.16", "1.15"]
+              version: ["1.19", "1.18", "1.17", "1.16"]
