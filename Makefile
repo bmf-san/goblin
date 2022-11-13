@@ -19,6 +19,9 @@ endif
 ifeq ($(shell command -v gosec 2> /dev/null),)
 	go install github.com/securego/gosec/v2/cmd/gosec@latest
 endif
+ifeq ($(shell command -v benchstat 2> /dev/null),)
+	go install golang.org/x/perf/cmd/benchstat@latest
+endif
 
 .PHONY: gofmt
 gofmt: ## Run gofmt.
@@ -65,3 +68,11 @@ test-benchmark-cpuprofile: ## Run benchmark tests with cpuprofile and run pprof.
 test-benchmark-memprofile: ## Run benchmark tests with memprofile and run pprof.
 	go test -bench . -memprofile mem.out
 	go tool pprof -http=":8889" mem.out
+
+benchstat: ## Run benchstat
+	$(eval BRANCH := $(shell git rev-parse --abbrev-ref HEAD))
+	git checkout master
+	go test -bench . -count 1 > old.out
+	git checkout $(BRANCH)
+	go test -bench . -count 1 > new.out
+	benchstat old.out new.out

@@ -33,40 +33,40 @@ var (
 )
 
 // NewRouter creates a new router.
-func NewRouter() *Router {
-	return &Router{
+func NewRouter() Router {
+	return Router{
 		tree: newTree(),
 	}
 }
 
 // Use sets middlewares.
-func (r *Router) Use(mws ...middleware) *Router {
+func (r Router) Use(mws ...middleware) Router {
 	nm := NewMiddlewares(mws)
 	tmpRoute.middlewares = nm
 	return r
 }
 
-func (r *Router) Methods(methods ...string) *Router {
+func (r Router) Methods(methods ...string) Router {
 	tmpRoute.methods = append(tmpRoute.methods, methods...)
 	return r
 }
 
 // Handler sets a handler.
-func (r *Router) Handler(path string, handler http.Handler) {
+func (r Router) Handler(path string, handler http.Handler) {
 	tmpRoute.handler = handler
 	tmpRoute.path = path
 	r.Handle()
 }
 
 // Handle handles a route.
-func (r *Router) Handle() {
+func (r Router) Handle() {
 	r.tree.Insert(tmpRoute.methods, tmpRoute.path, tmpRoute.handler, tmpRoute.middlewares)
 	tmpRoute = &route{}
 }
 
 // ServeHTTP dispatches the request to the handler whose
 // pattern most closely matches the request URL.
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	path := cleanPath(req.URL.Path)
 	action, params, err := r.tree.Search(method, path)

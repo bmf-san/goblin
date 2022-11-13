@@ -2,7 +2,7 @@ package goblin
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -11,7 +11,7 @@ import (
 
 func TestNewRouter(t *testing.T) {
 	actual := NewRouter()
-	expected := &Router{
+	expected := Router{
 		tree: newTree(),
 	}
 
@@ -217,7 +217,7 @@ func TestRouter(t *testing.T) {
 			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
 		}
 
-		recBody, _ := ioutil.ReadAll(rec.Body)
+		recBody, _ := io.ReadAll(rec.Body)
 		body := string(recBody)
 		if body != c.body {
 			t.Errorf("actual: %v expected: %v\n", body, c.body)
@@ -302,7 +302,7 @@ func TestCustomErrorHandler(t *testing.T) {
 			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
 		}
 
-		recBody, _ := ioutil.ReadAll(rec.Body)
+		recBody, _ := io.ReadAll(rec.Body)
 		body := string(recBody)
 		if body != c.body {
 			t.Errorf("actual: %v expected: %v\n", body, c.body)
