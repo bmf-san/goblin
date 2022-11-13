@@ -10,7 +10,7 @@ import (
 
 // Router represents the router which handles routing.
 type Router struct {
-	tree                    *tree
+	tree                    tree
 	NotFoundHandler         http.Handler
 	MethodNotAllowedHandler http.Handler
 }

@@ -8,7 +8,7 @@ import (
 
 func TestNewTree(t *testing.T) {
 	actual := newTree()
-	expected := &tree{
+	expected := tree{
 		node: &node{
 			label:    "/",
 			actions:  make(map[string]*action),
@@ -1335,7 +1335,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 	testWithFailure(t, tree, cases)
 }
 
-func testWithFailure(t *testing.T, tree *tree, cases []caseWithFailure) {
+func testWithFailure(t *testing.T, tree tree, cases []caseWithFailure) {
 	for _, c := range cases {
 		actualAction, actualParams, err := tree.Search(c.item.method, c.item.path)
 

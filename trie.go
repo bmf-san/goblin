@@ -43,8 +43,8 @@ const (
 )
 
 // newTree creates a new trie tree.
-func newTree() *tree {
-	return &tree{
+func newTree() tree {
+	return tree{
 		node: &node{
 			label:    "/",
 			actions:  make(map[string]*action),
@@ -54,7 +54,7 @@ func newTree() *tree {
 }
 
 // Insert inserts a route definition to tree.
-func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) {
+func (t tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) {
 	curNode := t.node
 	if path == "/" {
 		curNode.label = path
@@ -122,7 +122,7 @@ func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 var regC = &regCache{}
 
 // Search searches a path from a tree.
-func (t *tree) Search(method string, path string) (*action, params, error) {
+func (t tree) Search(method string, path string) (*action, params, error) {
 	var params params
 	curNode := t.node
 	for _, p := range explodePath(path) {
