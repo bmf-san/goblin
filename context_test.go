@@ -6,18 +6,18 @@ import (
 )
 
 func TestGetParam(t *testing.T) {
-	params := &params{
-		param{
+	params := []Param{
+		{
 			key:   "id",
 			value: "123",
 		},
-		param{
+		{
 			key:   "name",
 			value: "john",
 		},
 	}
 
-	ctx := context.WithValue(context.Background(), ParamsKey, *params)
+	ctx := context.WithValue(context.Background(), ParamsKey, params)
 
 	cases := []struct {
 		actual   string
