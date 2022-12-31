@@ -50,8 +50,8 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 	curNode := t.node
 	if path == "/" {
 		curNode.label = path
-		for _, method := range methods {
-			curNode.actions[method] = &action{
+		for i := 0; i < len(methods); i++ {
+			curNode.actions[methods[i]] = &action{
 				middlewares: mws,
 				handler:     handler,
 			}
@@ -59,26 +59,26 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 		return
 	}
 	ep := explodePath(path)
-	for i, p := range ep {
-		nextNode, ok := curNode.children[p]
+	for i := 0; i < len(ep); i++ {
+		nextNode, ok := curNode.children[ep[i]]
 		if ok {
 			curNode = nextNode
 		}
 		// Create a new node.
 		if !ok {
-			curNode.children[p] = &node{
-				label:    p,
+			curNode.children[ep[i]] = &node{
+				label:    ep[i],
 				actions:  make(map[string]*action),
 				children: make(map[string]*node),
 			}
-			curNode = curNode.children[p]
+			curNode = curNode.children[ep[i]]
 		}
 		// last loop.
 		// If there is already registered data, overwrite it.
 		if i == len(ep)-1 {
-			curNode.label = p
-			for _, method := range methods {
-				curNode.actions[method] = &action{
+			curNode.label = ep[i]
+			for j := 0; j < len(methods); j++ {
+				curNode.actions[methods[j]] = &action{
 					middlewares: mws,
 					handler:     handler,
 				}
@@ -119,28 +119,30 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 	var params *[]Param
 
 	curNode := t.node
-	for _, p := range explodePath(path) {
-		nextNode, ok := curNode.children[p]
+	ep := explodePath(path)
+	for i := 0; i < len(ep); i++ {
+		nextNode, ok := curNode.children[ep[i]]
 		if ok {
 			curNode = nextNode
 			continue
 		}
-		if len(curNode.children) == 0 {
-			if curNode.label != p {
+		cc := curNode.children
+		if len(cc) == 0 {
+			if curNode.label != ep[i] {
 				// no matching path was found.
 				return nil, nil, ErrNotFound
 			}
 			break
 		}
 		isParamMatch := false
-		for c := range curNode.children {
-			if string([]rune(c)[0]) == paramDelimiter {
+		for c := range cc {
+			if c[0:1] == paramDelimiter {
 				ptn := getPattern(c)
 				reg, err := regC.Get(ptn)
 				if err != nil {
 					return nil, nil, ErrNotFound
 				}
-				if reg.Match([]byte(p)) {
+				if reg.Match([]byte(ep[i])) {
 					pn := getParamName(c)
 
 					if params == nil {
@@ -153,11 +155,11 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 
 					(*params) = append((*params), Param{
 						key:   pn,
-						value: p,
+						value: ep[i],
 					})
 					t.putParams(params)
 
-					curNode = curNode.children[c]
+					curNode = cc[c]
 					isParamMatch = true
 					break
 				}
@@ -210,16 +212,15 @@ func getPattern(label string) string {
 func getParamName(label string) string {
 	leftI := strings.Index(label, paramDelimiter)
 	rightI := func(l string) int {
-		r := []rune(l)
-
 		var n int
 
-		for i := 0; i < len(r); i++ {
+		for i := 0; i < len(l); i++ {
 			n = i
-			if string(r[i]) == leftPtnDelimiter {
+			if l[i:i+1] == leftPtnDelimiter {
 				n = i
 				break
-			} else if i == len(r)-1 {
+			}
+			if i == len(l)-1 {
 				n = i + 1
 				break
 			}
