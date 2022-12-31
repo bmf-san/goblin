@@ -10,7 +10,8 @@ import (
 
 // tree is a trie tree.
 type tree struct {
-	node *node
+	node       *node
+	paramsPool sync.Pool
 }
 
 // node is a node of tree.
@@ -25,15 +26,6 @@ type action struct {
 	middlewares middlewares
 	handler     http.Handler
 }
-
-// param is a parameter.
-type param struct {
-	key   string
-	value string
-}
-
-// params is parameters.
-type params []param
 
 const (
 	paramDelimiter    string = ":"
@@ -122,8 +114,10 @@ func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 var regC = &regCache{}
 
 // Search searches a path from a tree.
-func (t *tree) Search(method string, path string) (*action, params, error) {
-	var params params
+func (t *tree) Search(method string, path string) (*action, []Param, error) {
+	// t.paramsPool is a pool for parameters.
+	var params *[]Param
+
 	curNode := t.node
 	for _, p := range explodePath(path) {
 		nextNode, ok := curNode.children[p]
@@ -148,10 +142,21 @@ func (t *tree) Search(method string, path string) (*action, params, error) {
 				}
 				if reg.Match([]byte(p)) {
 					pn := getParamName(c)
-					params = append(params, param{
+
+					if params == nil {
+						t.paramsPool.New = func() interface{} {
+							// NOTE: It is better to set the maximum value of paramters to capacity.
+							return &[]Param{}
+						}
+						params = t.getParams()
+					}
+
+					(*params) = append((*params), Param{
 						key:   pn,
 						value: p,
 					})
+					t.putParams(params)
+
 					curNode = curNode.children[c]
 					isParamMatch = true
 					break
@@ -176,7 +181,10 @@ func (t *tree) Search(method string, path string) (*action, params, error) {
 		// no matching handler and middlewares was found.
 		return nil, nil, ErrMethodNotAllowed
 	}
-	return actions, params, nil
+	if params == nil {
+		return actions, nil, nil
+	}
+	return actions, *params, nil
 }
 
 // getPattern gets a pattern from a label.

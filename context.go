@@ -1,6 +1,8 @@
 package goblin
 
-import "context"
+import (
+	"context"
+)
 
 type key int
 
@@ -11,7 +13,7 @@ const (
 
 // GetParam gets parameters from request.
 func GetParam(ctx context.Context, name string) string {
-	params, _ := ctx.Value(ParamsKey).(params)
+	params, _ := ctx.Value(ParamsKey).([]Param)
 
 	for i := range params {
 		if params[i].key == name {
