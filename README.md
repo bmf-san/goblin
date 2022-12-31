@@ -230,6 +230,12 @@ See [_examples](https://github.com/bmf-san/goblin/blob/master/_examples).
 # Wiki
 See [Wiki](https://github.com/bmf-san/goblin/wiki).
 
+# Benchmark tests
+Interested in a comparison with other HTTP routers?
+Please take a look here.
+
+[bmf-san/go-router-benchmark](https://github.com/bmf-san/go-router-benchmark)
+
 # Contribution
 We are always accepting issues, pull requests, and other requests and questions.
 
