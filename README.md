@@ -8,7 +8,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/bmf-san/goblin.svg)](https://pkg.go.dev/github.com/bmf-san/goblin)
 [![Sourcegraph](https://sourcegraph.com/github.com/bmf-san/goblin/-/badge.svg)](https://sourcegraph.com/github.com/bmf-san/goblin?badge)
 
-A golang http router based on trie tree.
+A golang http router based on radix tree.
 
 # Features
 - Support Go1.19 >= 1.16
