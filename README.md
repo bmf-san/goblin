@@ -166,6 +166,14 @@ You can be able to set one or more middlewares.
 There is no problem even if you do not set the middleware.
 
 ```go
+func global(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "global: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "global: after\n")
+	})
+}
+
 func first(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "first: before\n")
@@ -192,6 +200,10 @@ func third(next http.Handler) http.Handler {
 
 r := goblin.NewRouter()
 
+r.UseGlobal(global)
+r.Methods(http.MethodGet).Handler(`/globalmiddleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "/globalmiddleware\n")
+}))
 r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintf(w, "middleware\n")
 }))
@@ -202,21 +214,32 @@ r.Methods(http.MethodGet).Use(second, third).Handler(`/middlewares`, http.Handle
 http.ListenAndServe(":9999", r)
 ```
 
+Accessing `/globalmiddleware` will produce ouput similar to the following:
+```
+global: before
+/globalmiddleware
+global: after
+```
+
 In the above case, accessing `/middleware` will produce ouput similar to the following:
 
 ```
+global: before
 first: before
 middleware
 first: after
+global: after
 ```
 
 Accessing `/middlewares` will produce ouput similar to the following:
 ```
+global: before
 second: before
 third: before
 middlewares
 third: after
 second: after
+global: after
 ```
 
 # Examples

@@ -14,6 +14,7 @@ type Router struct {
 	NotFoundHandler         http.Handler
 	MethodNotAllowedHandler http.Handler
 	DefaultOPTIONSHandler   http.Handler
+	globalMiddlewares       middlewares
 }
 
 // route represents the route which has data for a routing.
@@ -38,6 +39,11 @@ func NewRouter() Router {
 	return Router{
 		tree: newTree(),
 	}
+}
+
+func (r *Router) UseGlobal(mws ...middleware) {
+	nm := NewMiddlewares(mws)
+	r.globalMiddlewares = nm
 }
 
 // Use sets middlewares.
@@ -96,8 +102,10 @@ func (r Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 
 	h := action.handler
-	if action.middlewares != nil {
-		h = action.middlewares.then(action.handler)
+	// append globalMiddlewares to head of middlewares.
+	mws := append(r.globalMiddlewares, action.middlewares...)
+	if mws != nil {
+		h = mws.then(action.handler)
 	}
 	if params != nil {
 		ctx := context.WithValue(req.Context(), ParamsKey, params)
