@@ -13,6 +13,7 @@ type Router struct {
 	tree                    *tree
 	NotFoundHandler         http.Handler
 	MethodNotAllowedHandler http.Handler
+	DefaultOPTIONSHandler   http.Handler
 }
 
 // route represents the route which has data for a routing.
@@ -68,6 +69,12 @@ func (r Router) Handle() {
 // pattern most closely matches the request URL.
 func (r Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
+	if method == http.MethodOptions {
+		if r.DefaultOPTIONSHandler != nil {
+			r.DefaultOPTIONSHandler.ServeHTTP(w, req)
+			return
+		}
+	}
 	path := cleanPath(req.URL.Path)
 	action, params, err := r.tree.Search(method, path)
 	if err == ErrNotFound {
