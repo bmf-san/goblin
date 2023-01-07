@@ -17,6 +17,7 @@ A golang http router based on trie tree.
 - Fully compatible with net/http
 - No external dependencies
 - Support custom error handler
+- Support default OPTIONS handler
 - Support method-based routing
 - Support variables in URL paths
 - Support regexp route patterns
@@ -114,7 +115,7 @@ In the above case, when accessing `/foo/1`, it matches the routing defined first
 
 So it doesn't match the 2nd and 3rd defined routings.
 
-## Custom error handler.
+## Custom error handler
 goblin supports custom error handler.
 
 You can be able to set your customized error handler.
@@ -135,6 +136,24 @@ func customMethodAllowed() http.Handler {
 r := goblin.NewRouter()
 r.NotFoundHandler = customMethodNotFound()
 r.MethodNotAllowedHandler = customMethodAllowed()
+
+http.ListenAndServe(":9999", r)
+```
+
+## Default OPTIONS handler
+goblin supports default OPTIONS handler.
+
+You can be able to set your default handler for OPTIONS http method.
+
+```go
+func DefaultOPTIONSHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.WriteHeader(http.StatusNoContent)
+	})
+}
+
+r := goblin.NewRouter()
+r.DefaultOPTIONSHandler = DefaultOPTIONSHandler()
 
 http.ListenAndServe(":9999", r)
 ```
@@ -198,30 +217,6 @@ third: before
 middlewares
 third: after
 second: after
-```
-
-### Handling CORS Requests by using middleware
-This is an example of using middleware.
-
-```go
-func CORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Max-Age", "86400")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Content-Length, Accept-Encoding, Authorization, Access-Control-Allow-Origin")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Length, Pagination-Count, Pagination-Pagecount, Pagination-Page, Pagination-Limit")
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-r.Methods(http.MethodGet).Use(first).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintf(w, "CORS")
-}))
-r.Methods(http.MethodOptions).Use(CORS).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    return
-}))
 ```
 
 # Examples

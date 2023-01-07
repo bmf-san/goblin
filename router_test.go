@@ -323,6 +323,24 @@ func TestMethodNotAllowedHandler(t *testing.T) {
 	}
 }
 
+func TestDefaultOPTIONSHandler(t *testing.T) {
+	fn := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	r := NewRouter()
+	r.DefaultOPTIONSHandler = fn
+	r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	req := httptest.NewRequest(http.MethodOptions, "/", nil)
+	rec := httptest.NewRecorder()
+
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("actual: %v expected: %v\n", rec.Code, http.StatusNoContent)
+	}
+}
+
 func TestCleanPath(t *testing.T) {
 	cases := []struct {
 		path     string
