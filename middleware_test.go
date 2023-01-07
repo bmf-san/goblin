@@ -20,6 +20,14 @@ func TestThen(t *testing.T) {
 	t.Skip("This method covers the tests in an associative manner with router tests, so skip it.")
 }
 
+func global(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "global: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "global: after\n")
+	})
+}
+
 func first(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "first: before\n")

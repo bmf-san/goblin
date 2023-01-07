@@ -20,17 +20,68 @@ func TestNewRouter(t *testing.T) {
 	}
 }
 
-func TestRouter(t *testing.T) {
+func TestRouterMiddleware(t *testing.T) {
 	r := NewRouter()
 
-	r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/")
+	r.UseGlobal(global)
+	r.Methods(http.MethodGet).Handler(`/globalmiddleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/globalmiddleware\n")
 	}))
 	r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/middleware\n")
 	}))
 	r.Methods(http.MethodGet).Use(first, second, third).Handler(`/middlewares`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/middlewares\n")
+	}))
+
+	cases := []struct {
+		path   string
+		method string
+		code   int
+		body   string
+	}{
+		{
+			path:   "/globalmiddleware",
+			method: http.MethodGet,
+			code:   http.StatusOK,
+			body:   "global: before\n/globalmiddleware\nglobal: after\n",
+		},
+		{
+			path:   "/middleware",
+			method: http.MethodGet,
+			code:   http.StatusOK,
+			body:   "global: before\nfirst: before\n/middleware\nfirst: after\nglobal: after\n",
+		},
+		{
+			path:   "/middlewares",
+			method: http.MethodGet,
+			code:   http.StatusOK,
+			body:   "global: before\nfirst: before\nsecond: before\nthird: before\n/middlewares\nthird: after\nsecond: after\nfirst: after\nglobal: after\n",
+		},
+	}
+
+	for _, c := range cases {
+		req := httptest.NewRequest(c.method, c.path, nil)
+		rec := httptest.NewRecorder()
+
+		r.ServeHTTP(rec, req)
+
+		if rec.Code != c.code {
+			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
+		}
+
+		recBody, _ := io.ReadAll(rec.Body)
+		body := string(recBody)
+		if body != c.body {
+			t.Errorf("actual: %v expected: %v\n", body, c.body)
+		}
+	}
+}
+func TestRouter(t *testing.T) {
+	r := NewRouter()
+
+	r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/")
 	}))
 	r.Methods(http.MethodGet).Handler(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "/foo")
@@ -102,18 +153,6 @@ func TestRouter(t *testing.T) {
 			method: http.MethodGet,
 			code:   http.StatusOK,
 			body:   "/",
-		},
-		{
-			path:   "/middleware",
-			method: http.MethodGet,
-			code:   http.StatusOK,
-			body:   "first: before\n/middleware\nfirst: after\n",
-		},
-		{
-			path:   "/middlewares",
-			method: http.MethodGet,
-			code:   http.StatusOK,
-			body:   "first: before\nsecond: before\nthird: before\n/middlewares\nthird: after\nsecond: after\nfirst: after\n",
 		},
 		{
 			path:   "/foo",
