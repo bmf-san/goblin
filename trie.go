@@ -3,6 +3,7 @@ package goblin
 import (
 	"fmt"
 	"net/http"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -47,7 +48,9 @@ func newTree() *tree {
 
 // Insert inserts a route definition to tree.
 func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) {
+	path = cleanPath(path)
 	curNode := t.node
+
 	if path == "/" {
 		curNode.label = path
 		for i := 0; i < len(methods); i++ {
@@ -58,25 +61,55 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 		}
 		return
 	}
-	ep := explodePath(path)
-	for i := 0; i < len(ep); i++ {
-		nextNode, ok := curNode.children[ep[i]]
+
+	path = removeTrailingSlash(path)
+
+	cnt := strings.Count(path, "/")
+	var l string
+
+	for i := 0; i < cnt; i++ {
+		// Delete the / at head of path. ex. /foo/bar → foo/bar
+		if path[:1] == "/" {
+			path = path[1:]
+		}
+
+		idx := strings.Index(path, "/")
+		if idx > 0 {
+			// ex. foo/bar/baz → foo
+			l = path[:idx]
+		}
+		if idx == -1 {
+			// ex. foo → foo
+			l = path
+		}
+
+		nextNode, ok := curNode.children[l]
 		if ok {
 			curNode = nextNode
+			if idx > 0 {
+				l = path[:idx]
+				// foo/bar/baz → /bar/baz
+				path = path[idx:]
+			}
 		}
 		// Create a new node.
 		if !ok {
-			curNode.children[ep[i]] = &node{
-				label:    ep[i],
+			curNode.children[l] = &node{
+				label:    l,
 				actions:  make(map[string]*action),
 				children: make(map[string]*node),
 			}
-			curNode = curNode.children[ep[i]]
+			curNode = curNode.children[l]
+			if idx > 0 {
+				l = path[:idx]
+				// foo/bar/baz → /bar/baz
+				path = path[idx:]
+			}
 		}
 		// last loop.
 		// If there is already registered data, overwrite it.
-		if i == len(ep)-1 {
-			curNode.label = ep[i]
+		if i == cnt-1 {
+			curNode.label = l
 			for j := 0; j < len(methods); j++ {
 				curNode.actions[methods[j]] = &action{
 					middlewares: mws,
@@ -93,8 +126,8 @@ type regCache struct {
 	s sync.Map
 }
 
-// Get gets a compiled regexp from cache or create it.
-func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
+// getReg gets a compiled regexp from cache or create it.
+func (rc *regCache) getReg(ptn string) (*regexp.Regexp, error) {
 	v, ok := rc.s.Load(ptn)
 	if ok {
 		reg, ok := v.(*regexp.Regexp)
@@ -115,69 +148,101 @@ var regC = &regCache{}
 
 // Search searches a path from a tree.
 func (t *tree) Search(method string, path string) (*action, []Param, error) {
-	// t.paramsPool is a pool for parameters.
+	path = cleanPath(path)
+	curNode := t.node
+
+	if path == "/" && curNode.label == "/" && curNode.actions[method] == nil {
+		return nil, nil, ErrNotFound
+	}
+
+	path = removeTrailingSlash(path)
+
+	cnt := strings.Count(path, "/")
+	var l string
 	var params *[]Param
 
-	curNode := t.node
-	ep := explodePath(path)
-	for i := 0; i < len(ep); i++ {
-		nextNode, ok := curNode.children[ep[i]]
+	for i := 0; i < cnt; i++ {
+		// Delete the / at head of path. ex. /foo/bar → foo/bar
+		if path[:1] == "/" {
+			path = path[1:]
+		}
+
+		idx := strings.Index(path, "/")
+		if idx > 0 {
+			// ex. foo/bar/baz → foo
+			l = path[:idx]
+		}
+		if idx == -1 {
+			// ex. foo → foo
+			l = path
+		}
+
+		nextNode, ok := curNode.children[l]
 		if ok {
 			curNode = nextNode
+			if idx > 0 {
+				l = path[:idx]
+				// foo/bar/baz → /bar/baz
+				path = path[idx:]
+			}
 			continue
 		}
+
 		cc := curNode.children
+
+		// leaf node
 		if len(cc) == 0 {
-			if curNode.label != ep[i] {
+			if curNode.label != l {
 				// no matching path was found.
 				return nil, nil, ErrNotFound
 			}
 			break
 		}
 		isParamMatch := false
+		// parameter matching
 		for c := range cc {
 			if c[0:1] == paramDelimiter {
 				ptn := getPattern(c)
-				reg, err := regC.Get(ptn)
-				if err != nil {
-					return nil, nil, ErrNotFound
-				}
-				if reg.Match([]byte(ep[i])) {
-					pn := getParamName(c)
-
-					if params == nil {
-						t.paramsPool.New = func() interface{} {
-							// NOTE: It is better to set the maximum value of paramters to capacity.
-							return &[]Param{}
-						}
-						params = t.getParams()
+				if ptn != "" {
+					reg, err := regC.getReg(ptn)
+					if err != nil {
+						return nil, nil, ErrNotFound
 					}
-
-					(*params) = append((*params), Param{
-						key:   pn,
-						value: ep[i],
-					})
-					t.putParams(params)
-
-					curNode = cc[c]
-					isParamMatch = true
-					break
+					if !reg.Match([]byte(l)) {
+						return nil, nil, ErrNotFound
+					}
 				}
-				// no matching param was found.
-				return nil, nil, ErrNotFound
+
+				pn := getParamName(c)
+
+				if params == nil {
+					t.paramsPool.New = func() interface{} {
+						// NOTE: It is better to set the maximum value of paramters to capacity.
+						return &[]Param{}
+					}
+					params = t.getParams()
+				}
+
+				(*params) = append((*params), Param{
+					key:   pn,
+					value: l,
+				})
+				t.putParams(params)
+
+				curNode = cc[c]
+				isParamMatch = true
+				if idx > 0 {
+					// ex. foo/bar/baz → /bar/baz
+					path = path[idx:]
+				}
 			}
 		}
 		if !isParamMatch {
-			// no matching param was found.
+			// no matching path was found.
 			return nil, nil, ErrNotFound
 		}
 	}
-	if path == "/" {
-		if len(curNode.actions) == 0 {
-			// no matching handler and middlewares was found.
-			return nil, nil, ErrNotFound
-		}
-	}
+
 	actions := curNode.actions[method]
 	if actions == nil {
 		// no matching handler and middlewares was found.
@@ -199,7 +264,7 @@ func getPattern(label string) string {
 
 	// if label doesn't have any pattern, return wild card pattern as default.
 	if leftI == -1 || rightI == -1 {
-		return ptnWildcard
+		return ""
 	}
 
 	return label[leftI+1 : rightI]
@@ -232,11 +297,34 @@ func getParamName(label string) string {
 	return label[leftI+1 : rightI]
 }
 
-// explodePath converts a path to a slice split　by path delimiter.
-// path expects a path processed by cleanPath.
-func explodePath(path string) []string {
-	splitFn := func(c rune) bool {
-		return c == '/'
+// cleanPath returns the canonical path for p, eliminating . and .. elements.
+// This method borrowed from from net/http package.
+// see https://cs.opensource.google/go/go/+/master:src/net/http/server.go;l=2310;bpv=1;bpt=1
+func cleanPath(p string) string {
+	if p == "" {
+		return "/"
 	}
-	return strings.FieldsFunc(path, splitFn)
+	if p[0] != '/' {
+		p = "/" + p
+	}
+	np := path.Clean(p)
+	// path.Clean removes trailing slash except for root;
+	// put the trailing slash back if necessary.
+	if p[len(p)-1] == '/' && np != "/" {
+		// Fast path for common case of p being the string we want:
+		if len(p) == len(np)+1 && strings.HasPrefix(p, np) {
+			np = p
+		} else {
+			np += "/"
+		}
+	}
+	return np
+}
+
+// removeTrailingSlash removes trailing slash from path.
+func removeTrailingSlash(path string) string {
+	if path[len(path)-1:] == "/" {
+		path = path[:len(path)-1]
+	}
+	return path
 }
