@@ -28,6 +28,7 @@ type route struct {
 var (
 	tmpRoute = &route{}
 
+	// NOTE: want to separate this from the error when the parameter is not found.
 	// Error for not found.
 	ErrNotFound = errors.New("no matching route was found")
 	// Error for method not allowed.

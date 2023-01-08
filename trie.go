@@ -114,11 +114,21 @@ func (rc *regCache) Get(ptn string) (*regexp.Regexp, error) {
 var regC = &regCache{}
 
 // Search searches a path from a tree.
+// path is assumed to be formatted by the cleanPath function.
 func (t *tree) Search(method string, path string) (*action, []Param, error) {
 	// t.paramsPool is a pool for parameters.
 	var params *[]Param
+	var matchErr error
 
 	curNode := t.node
+	if path == "/" {
+		if len(curNode.actions) == 0 {
+			// no matching handler and middlewares was found.
+			matchErr = ErrNotFound
+		}
+	}
+	// NOTE: use the path string as is without using explodepath.
+	// NOTE: The number of /'s in the path is the loop count.
 	ep := explodePath(path)
 	for i := 0; i < len(ep); i++ {
 		nextNode, ok := curNode.children[ep[i]]
@@ -127,20 +137,24 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 			continue
 		}
 		cc := curNode.children
+		// leaf node
 		if len(cc) == 0 {
 			if curNode.label != ep[i] {
 				// no matching path was found.
-				return nil, nil, ErrNotFound
+				matchErr = ErrNotFound
+				break
 			}
 			break
 		}
 		isParamMatch := false
+		// parameter matching
 		for c := range cc {
 			if c[0:1] == paramDelimiter {
 				ptn := getPattern(c)
 				reg, err := regC.Get(ptn)
 				if err != nil {
-					return nil, nil, ErrNotFound
+					matchErr = ErrNotFound
+					break
 				}
 				if reg.Match([]byte(ep[i])) {
 					pn := getParamName(c)
@@ -148,6 +162,7 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 					if params == nil {
 						t.paramsPool.New = func() interface{} {
 							// NOTE: It is better to set the maximum value of paramters to capacity.
+							// NOTE: The parameter should be cached in a variable and set in the pool when returning.
 							return &[]Param{}
 						}
 						params = t.getParams()
@@ -163,25 +178,26 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 					isParamMatch = true
 					break
 				}
-				// no matching param was found.
-				return nil, nil, ErrNotFound
+				// no matching path was found.
+				matchErr = ErrNotFound
 			}
 		}
 		if !isParamMatch {
-			// no matching param was found.
-			return nil, nil, ErrNotFound
+			// no matching path was found.
+			matchErr = ErrNotFound
 		}
 	}
-	if path == "/" {
-		if len(curNode.actions) == 0 {
-			// no matching handler and middlewares was found.
-			return nil, nil, ErrNotFound
-		}
+
+	if matchErr != nil {
+		return nil, nil, matchErr
 	}
 	actions := curNode.actions[method]
 	if actions == nil {
 		// no matching handler and middlewares was found.
-		return nil, nil, ErrMethodNotAllowed
+		matchErr = ErrMethodNotAllowed
+		if matchErr != nil {
+			return nil, nil, ErrMethodNotAllowed
+		}
 	}
 	if params == nil {
 		return actions, nil, nil
