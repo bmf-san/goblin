@@ -10,6 +10,19 @@ func handler() http.Handler {
 	return http.HandlerFunc(func(_ http.ResponseWriter, _ *http.Request) {})
 }
 
+func benchmarkSetRoutes(n int, b *testing.B) {
+	r := NewRouter()
+	path := "/path"
+	pathN := "/pathN"
+
+	for i := 0; i < n; i++ {
+		path += pathN
+	}
+
+	b.ResetTimer()
+	r.Methods(http.MethodGet).Handler(path, handler())
+}
+
 func benchmarkStatic(n int, b *testing.B) {
 	r := NewRouter()
 	path := "/static"
@@ -81,6 +94,18 @@ func benchmarkRegexp(n int, b *testing.B) {
 			r.ServeHTTP(rec, req)
 		}
 	})
+}
+
+func BenchmarkSetRoutes1(b *testing.B) {
+	benchmarkSetRoutes(1, b)
+}
+
+func BenchmarkSetRoutes5(b *testing.B) {
+	benchmarkSetRoutes(5, b)
+}
+
+func BenchmarkSetRoutes10(b *testing.B) {
+	benchmarkSetRoutes(10, b)
 }
 
 func BenchmarkStatic1(b *testing.B) {

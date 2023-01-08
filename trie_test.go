@@ -612,7 +612,6 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/bar",
 			},
-
 			expectedAction: &action{
 				handler:     fooBarGetPostDeleteHandler,
 				middlewares: []middleware{first},
@@ -625,7 +624,6 @@ func TestSearchPathCommonMultiMethods(t *testing.T) {
 				method: http.MethodPost,
 				path:   "/foo/bar",
 			},
-
 			expectedAction: &action{
 				handler:     fooBarGetPostDeleteHandler,
 				middlewares: []middleware{first},
@@ -670,7 +668,6 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/",
 			},
-
 			expectedAction: &action{
 				handler:     rootHandler,
 				middlewares: []middleware{first},
@@ -683,7 +680,6 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "//",
 			},
-
 			expectedAction: &action{
 				handler:     rootHandler,
 				middlewares: []middleware{first},
@@ -696,7 +692,6 @@ func TestSearchTrailingSlash(t *testing.T) {
 				method: http.MethodGet,
 				path:   "/foo/",
 			},
-
 			expectedAction: &action{
 				handler:     fooHandler,
 				middlewares: []middleware{first},
@@ -1402,15 +1397,15 @@ func TestGetPattern(t *testing.T) {
 		},
 		{
 			actual:   getPattern(`:id[`),
-			expected: ptnWildcard,
+			expected: "",
 		},
 		{
 			actual:   getPattern(`:id]`),
-			expected: ptnWildcard,
+			expected: "",
 		},
 		{
 			actual:   getPattern(`:id`),
-			expected: ptnWildcard,
+			expected: "",
 		},
 	}
 
@@ -1451,48 +1446,84 @@ func TestGetParamName(t *testing.T) {
 	}
 }
 
-func TestExplodePath(t *testing.T) {
+func TestCleanPath(t *testing.T) {
 	cases := []struct {
-		actual   []string
-		expected []string
+		path     string
+		expected string
 	}{
 		{
-			actual:   explodePath(""),
-			expected: []string{},
+			path:     "",
+			expected: "/",
 		},
 		{
-			actual:   explodePath("/"),
-			expected: []string{},
+			path:     "//",
+			expected: "/",
 		},
 		{
-			actual:   explodePath("//"),
-			expected: []string{},
+			path:     "///",
+			expected: "/",
 		},
 		{
-			actual:   explodePath("///"),
-			expected: []string{},
+			path:     "path",
+			expected: "/path",
 		},
 		{
-			actual:   explodePath("/foo"),
-			expected: []string{"foo"},
+			path:     "/",
+			expected: "/",
 		},
 		{
-			actual:   explodePath("/foo/bar"),
-			expected: []string{"foo", "bar"},
+			path:     "/path/trailingslash/",
+			expected: "/path/trailingslash/",
 		},
 		{
-			actual:   explodePath("/foo/bar/baz"),
-			expected: []string{"foo", "bar", "baz"},
-		},
-		{
-			actual:   explodePath("/foo/bar/baz/"),
-			expected: []string{"foo", "bar", "baz"},
+			path:     "path/trailingslash//",
+			expected: "/path/trailingslash/",
 		},
 	}
 
 	for _, c := range cases {
-		if !reflect.DeepEqual(c.actual, c.expected) {
-			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
+		actual := cleanPath(c.path)
+		if actual != c.expected {
+			t.Errorf("actual: %v expected: %v\n", actual, c.expected)
+		}
+	}
+}
+
+func TestRemoveTrailingSlash(t *testing.T) {
+	cases := []struct {
+		path     string
+		expected string
+	}{
+		{
+			path:     "//",
+			expected: "/",
+		},
+		{
+			path:     "///",
+			expected: "//",
+		},
+		{
+			path:     "path",
+			expected: "path",
+		},
+		{
+			path:     "/",
+			expected: "",
+		},
+		{
+			path:     "/path/trailingslash/",
+			expected: "/path/trailingslash",
+		},
+		{
+			path:     "/path/trailingslash//",
+			expected: "/path/trailingslash/",
+		},
+	}
+
+	for _, c := range cases {
+		actual := removeTrailingSlash(c.path)
+		if actual != c.expected {
+			t.Errorf("actual: %v expected: %v\n", actual, c.expected)
 		}
 	}
 }
