@@ -93,12 +93,14 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 			path = path[1:]
 		}
 
-		idx := -1
-		for i := 0; i < len(path); i++ {
-			if string(path[i]) == "/" {
-				idx = i
-				break
-			}
+		idx := strings.Index(path, "/")
+		if idx > 0 {
+			// ex. foo/bar/baz → foo
+			l = path[:idx]
+		}
+		if idx == -1 {
+			// ex. foo → foo
+			l = path
 		}
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
@@ -193,12 +195,14 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 			path = path[1:]
 		}
 
-		idx := -1
-		for i := 0; i < len(path); i++ {
-			if string(path[i]) == "/" {
-				idx = i
-				break
-			}
+		idx := strings.Index(path, "/")
+		if idx > 0 {
+			// ex. foo/bar/baz → foo
+			l = path[:idx]
+		}
+		if idx == -1 {
+			// ex. foo → foo
+			l = path
 		}
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
@@ -292,23 +296,15 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 // :id[^\d+$] → ^\d+$
 // :id        → (.+)
 func getPattern(label string) string {
-	var leftI int
-	var rightI int
-	for i := 0; i < len(label); i++ {
-		if string(label[i]) == leftPtnDelimiter {
-			leftI = i
-		}
-		if string(label[i]) == rightPtnDelimiter {
-			rightI = i
-		}
+	leftI := strings.Index(label, leftPtnDelimiter)
+	rightI := strings.Index(label, rightPtnDelimiter)
+
+	// if label doesn't have any pattern, return wild card pattern as default.
+	if leftI == -1 || rightI == -1 {
+		return ""
 	}
 
-	// The first character is assumed to be a parama delimiter.
-	if 0 < leftI && leftI < rightI {
-		return label[leftI+1 : rightI]
-	}
-
-	return ""
+	return label[leftI+1 : rightI]
 }
 
 // getParamName gets a parameter from a label.
@@ -316,19 +312,26 @@ func getPattern(label string) string {
 // :id[^\d+$] → id
 // :id        → id
 func getParamName(label string) string {
-	var rightI int
-	for i := 0; i < len(label); i++ {
-		if string(label[i:i+1]) == leftPtnDelimiter {
-			rightI = i
-			break
+	leftI := strings.Index(label, paramDelimiter)
+	rightI := func(l string) int {
+		var n int
+
+		for i := 0; i < len(l); i++ {
+			n = i
+			if l[i:i+1] == leftPtnDelimiter {
+				n = i
+				break
+			}
+			if i == len(l)-1 {
+				n = i + 1
+				break
+			}
 		}
-		if i == len(label)-1 {
-			rightI = i + 1
-			break
-		}
-	}
-	// The first character is assumed to be a parama delimiter.
-	return label[1:rightI]
+
+		return n
+	}(label)
+
+	return label[leftI+1 : rightI]
 }
 
 // cleanPath returns the canonical path for p, eliminating . and .. elements.
