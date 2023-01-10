@@ -46,6 +46,26 @@ func newTree() *tree {
 	}
 }
 
+// Param is a parameter.
+type Param struct {
+	key   string
+	value string
+}
+
+// getParams gets parameters.
+func (t *tree) getParams() *[]Param {
+	ps, _ := t.paramsPool.Get().(*[]Param)
+	*ps = (*ps)[0:0] // reset slice
+	return ps
+}
+
+// putParams puts parameters.
+func (t *tree) putParams(ps *[]Param) {
+	if ps != nil {
+		t.paramsPool.Put(ps)
+	}
+}
+
 // Insert inserts a route definition to tree.
 func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) {
 	path = cleanPath(path)
@@ -73,7 +93,13 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 			path = path[1:]
 		}
 
-		idx := strings.Index(path, "/")
+		idx := -1
+		for i := 0; i < len(path); i++ {
+			if string(path[i]) == "/" {
+				idx = i
+				break
+			}
+		}
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
 			l = path[:idx]
@@ -151,7 +177,7 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 	path = cleanPath(path)
 	curNode := t.node
 
-	if path == "/" && curNode.label == "/" && curNode.actions[method] == nil {
+	if path == "/" && curNode.actions[method] == nil {
 		return nil, nil, ErrNotFound
 	}
 
@@ -167,7 +193,13 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 			path = path[1:]
 		}
 
-		idx := strings.Index(path, "/")
+		idx := -1
+		for i := 0; i < len(path); i++ {
+			if string(path[i]) == "/" {
+				idx = i
+				break
+			}
+		}
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
 			l = path[:idx]
@@ -175,6 +207,17 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 		if idx == -1 {
 			// ex. foo → foo
 			l = path
+		}
+
+		cc := curNode.children
+
+		// leaf node
+		if len(cc) == 0 {
+			if curNode.label != l {
+				// no matching path was found.
+				return nil, nil, ErrNotFound
+			}
+			break
 		}
 
 		nextNode, ok := curNode.children[l]
@@ -188,16 +231,6 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 			continue
 		}
 
-		cc := curNode.children
-
-		// leaf node
-		if len(cc) == 0 {
-			if curNode.label != l {
-				// no matching path was found.
-				return nil, nil, ErrNotFound
-			}
-			break
-		}
 		isParamMatch := false
 		// parameter matching
 		for c := range cc {
@@ -259,15 +292,23 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 // :id[^\d+$] → ^\d+$
 // :id        → (.+)
 func getPattern(label string) string {
-	leftI := strings.Index(label, leftPtnDelimiter)
-	rightI := strings.Index(label, rightPtnDelimiter)
-
-	// if label doesn't have any pattern, return wild card pattern as default.
-	if leftI == -1 || rightI == -1 {
-		return ""
+	var leftI int
+	var rightI int
+	for i := 0; i < len(label); i++ {
+		if string(label[i]) == leftPtnDelimiter {
+			leftI = i
+		}
+		if string(label[i]) == rightPtnDelimiter {
+			rightI = i
+		}
 	}
 
-	return label[leftI+1 : rightI]
+	// The first character is assumed to be a parama delimiter.
+	if 0 < leftI && leftI < rightI {
+		return label[leftI+1 : rightI]
+	}
+
+	return ""
 }
 
 // getParamName gets a parameter from a label.
@@ -275,26 +316,19 @@ func getPattern(label string) string {
 // :id[^\d+$] → id
 // :id        → id
 func getParamName(label string) string {
-	leftI := strings.Index(label, paramDelimiter)
-	rightI := func(l string) int {
-		var n int
-
-		for i := 0; i < len(l); i++ {
-			n = i
-			if l[i:i+1] == leftPtnDelimiter {
-				n = i
-				break
-			}
-			if i == len(l)-1 {
-				n = i + 1
-				break
-			}
+	var rightI int
+	for i := 0; i < len(label); i++ {
+		if string(label[i:i+1]) == leftPtnDelimiter {
+			rightI = i
+			break
 		}
-
-		return n
-	}(label)
-
-	return label[leftI+1 : rightI]
+		if i == len(label)-1 {
+			rightI = i + 1
+			break
+		}
+	}
+	// The first character is assumed to be a parama delimiter.
+	return label[1:rightI]
 }
 
 // cleanPath returns the canonical path for p, eliminating . and .. elements.
