@@ -12,7 +12,7 @@ func TestNewTree(t *testing.T) {
 		node: &node{
 			label:    "/",
 			actions:  make(map[string]*action),
-			children: make(map[string]*node),
+			children: []*node{},
 		},
 	}
 

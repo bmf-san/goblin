@@ -13,13 +13,14 @@ import (
 type tree struct {
 	node       *node
 	paramsPool sync.Pool
+	maxParams  int
 }
 
 // node is a node of tree.
 type node struct {
 	label    string
 	actions  map[string]*action // key is method
-	children map[string]*node   // key is label of next nodes
+	children []*node            // key is label of next nodes
 }
 
 // action is an action.
@@ -41,7 +42,7 @@ func newTree() *tree {
 		node: &node{
 			label:    "/",
 			actions:  make(map[string]*action),
-			children: make(map[string]*node),
+			children: []*node{},
 		},
 	}
 }
@@ -64,6 +65,15 @@ func (t *tree) putParams(ps *[]Param) {
 	if ps != nil {
 		t.paramsPool.Put(ps)
 	}
+}
+
+func (n *node) getChild(label string) *node {
+	for i := 0; i < len(n.children); i++ {
+		if n.children[i].label == label {
+			return n.children[i]
+		}
+	}
+	return nil
 }
 
 // Insert inserts a route definition to tree.
@@ -111,8 +121,8 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 			l = path
 		}
 
-		nextNode, ok := curNode.children[l]
-		if ok {
+		nextNode := curNode.getChild(l)
+		if nextNode != nil {
 			curNode = nextNode
 			if idx > 0 {
 				l = path[:idx]
@@ -121,13 +131,14 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 			}
 		}
 		// Create a new node.
-		if !ok {
-			curNode.children[l] = &node{
+		if nextNode == nil {
+			child := &node{
 				label:    l,
 				actions:  make(map[string]*action),
-				children: make(map[string]*node),
+				children: []*node{},
 			}
-			curNode = curNode.children[l]
+			curNode.children = append(curNode.children, child)
+			curNode = child
 			if idx > 0 {
 				l = path[:idx]
 				// foo/bar/baz → /bar/baz
@@ -145,6 +156,15 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 				}
 			}
 			break
+		}
+	}
+	if t.maxParams < cnt {
+		t.maxParams = cnt
+	}
+	if t.paramsPool.New == nil && t.maxParams > 0 {
+		t.paramsPool.New = func() interface{} {
+			p := make([]Param, 0, t.maxParams)
+			return &p
 		}
 	}
 }
@@ -224,8 +244,8 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 			break
 		}
 
-		nextNode, ok := curNode.children[l]
-		if ok {
+		nextNode := curNode.getChild(l)
+		if nextNode != nil {
 			curNode = nextNode
 			if idx > 0 {
 				l = path[:idx]
@@ -237,9 +257,9 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 
 		isParamMatch := false
 		// parameter matching
-		for c := range cc {
-			if c[0:1] == paramDelimiter {
-				ptn := getPattern(c)
+		for _, c := range cc {
+			if c.label[0:1] == paramDelimiter {
+				ptn := getPattern(c.label)
 				if ptn != "" {
 					reg, err := regC.getReg(ptn)
 					if err != nil {
@@ -250,23 +270,20 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 					}
 				}
 
-				pn := getParamName(c)
+				pn := getParamName(c.label)
 
 				if params == nil {
-					t.paramsPool.New = func() interface{} {
-						// NOTE: It is better to set the maximum value of paramters to capacity.
-						return &[]Param{}
-					}
 					params = t.getParams()
 				}
-
-				(*params) = append((*params), Param{
+				lp := len(*params)
+				*params = (*params)[:lp+1]
+				(*params)[lp] = Param{
 					key:   pn,
 					value: l,
-				})
+				}
 				t.putParams(params)
 
-				curNode = cc[c]
+				curNode = c
 				isParamMatch = true
 				if idx > 0 {
 					// ex. foo/bar/baz → /bar/baz

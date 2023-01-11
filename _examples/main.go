@@ -19,6 +19,14 @@ func customMethodAllowed() http.Handler {
 	})
 }
 
+func global(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "global: before\n")
+		next.ServeHTTP(w, r)
+		fmt.Fprintf(w, "global: after\n")
+	})
+}
+
 func first(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "first: before\n")
@@ -47,6 +55,7 @@ func main() {
 	r := goblin.NewRouter()
 	r.NotFoundHandler = customMethodNotFound()
 	r.MethodNotAllowedHandler = customMethodAllowed()
+	r.UseGlobal(global)
 
 	r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "/middleware\n")
@@ -75,24 +84,24 @@ func main() {
 	r.Methods(http.MethodGet).Handler(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		fmt.Fprint(w, "/foo/bar/:id\n")
-		fmt.Fprintf(w, "/foo/bar/%v", id)
+		fmt.Fprintf(w, "/foo/bar/%v\n", id)
 	}))
 	r.Methods(http.MethodGet).Handler(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		name := goblin.GetParam(r.Context(), "name")
 		fmt.Fprint(w, "/foo/bar/:id/:name\n")
-		fmt.Fprintf(w, "/foo/bar/%v/%v", id, name)
+		fmt.Fprintf(w, "/foo/bar/%v/%v\n", id, name)
 	}))
 	r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		fmt.Fprint(w, "/foo/:id[^\\d+$]\n")
-		fmt.Fprintf(w, "/foo/%v", id)
+		fmt.Fprintf(w, "/foo/%v\n", id)
 	}))
 	r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := goblin.GetParam(r.Context(), "id")
 		name := goblin.GetParam(r.Context(), "name")
 		fmt.Fprint(w, "/foo/:id[^\\d+$]/:name\n")
-		fmt.Fprintf(w, "/foo/%v/%v", id, name)
+		fmt.Fprintf(w, "/foo/%v/%v\n", id, name)
 	}))
 
 	http.ListenAndServe(":9999", r)
