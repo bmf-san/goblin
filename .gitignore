@@ -5,3 +5,4 @@ goblin
 goblin.test
 debug.test
 *.out
+__debug_bin

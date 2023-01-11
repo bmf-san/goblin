@@ -72,7 +72,7 @@ test-benchmark-memprofile: ## Run benchmark tests with memprofile and run pprof.
 benchstat: ## Run benchstat
 	$(eval BRANCH := $(shell git rev-parse --abbrev-ref HEAD))
 	git checkout master
-	go test -bench . -benchmem -count 1 > old.out
+	go test -bench . -benchmem -cpu=1 -count=1 > old.out
 	git checkout $(BRANCH)
-	go test -bench . -benchmem -count 1 > new.out
+	go test -bench . -benchmem -cpu=1 -count=1 > new.out
 	benchstat old.out new.out
