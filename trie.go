@@ -102,13 +102,10 @@ func (t *tree) Insert(path string, handler http.Handler, mws middlewares) {
 		}
 
 		idx := strings.Index(path, "/")
+		l = path
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
 			l = path[:idx]
-		}
-		if idx == -1 {
-			// ex. foo → foo
-			l = path
 		}
 
 		nextNode := curNode.getChild(l)
@@ -204,13 +201,11 @@ func (t *tree) Search(path string) (*action, []Param, error) {
 		}
 
 		idx := strings.Index(path, "/")
+		// ex. foo → foo
+		l = path
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
 			l = path[:idx]
-		}
-		if idx == -1 {
-			// ex. foo → foo
-			l = path
 		}
 
 		cc := curNode.children
@@ -228,7 +223,6 @@ func (t *tree) Search(path string) (*action, []Param, error) {
 		if nextNode != nil {
 			curNode = nextNode
 			if idx > 0 {
-				l = path[:idx]
 				// foo/bar/baz → /bar/baz
 				path = path[idx:]
 			}
