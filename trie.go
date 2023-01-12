@@ -19,8 +19,8 @@ type tree struct {
 // node is a node of tree.
 type node struct {
 	label    string
-	actions  map[string]*action // key is method
-	children []*node            // key is label of next nodes
+	action   *action // key is method
+	children []*node // key is label of next nodes
 }
 
 // action is an action.
@@ -41,7 +41,7 @@ func newTree() *tree {
 	return &tree{
 		node: &node{
 			label:    "/",
-			actions:  make(map[string]*action),
+			action:   &action{},
 			children: []*node{},
 		},
 	}
@@ -77,17 +77,15 @@ func (n *node) getChild(label string) *node {
 }
 
 // Insert inserts a route definition to tree.
-func (t *tree) Insert(methods []string, path string, handler http.Handler, mws middlewares) {
+func (t *tree) Insert(path string, handler http.Handler, mws middlewares) {
 	path = cleanPath(path)
 	curNode := t.node
 
 	if path == "/" {
 		curNode.label = path
-		for i := 0; i < len(methods); i++ {
-			curNode.actions[methods[i]] = &action{
-				middlewares: mws,
-				handler:     handler,
-			}
+		curNode.action = &action{
+			middlewares: mws,
+			handler:     handler,
 		}
 		return
 	}
@@ -104,21 +102,10 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 		}
 
 		idx := strings.Index(path, "/")
+		l = path
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
 			l = path[:idx]
-		}
-		if idx == -1 {
-			// ex. foo → foo
-			l = path
-		}
-		if idx > 0 {
-			// ex. foo/bar/baz → foo
-			l = path[:idx]
-		}
-		if idx == -1 {
-			// ex. foo → foo
-			l = path
 		}
 
 		nextNode := curNode.getChild(l)
@@ -134,7 +121,7 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 		if nextNode == nil {
 			child := &node{
 				label:    l,
-				actions:  make(map[string]*action),
+				action:   &action{},
 				children: []*node{},
 			}
 			curNode.children = append(curNode.children, child)
@@ -149,11 +136,9 @@ func (t *tree) Insert(methods []string, path string, handler http.Handler, mws m
 		// If there is already registered data, overwrite it.
 		if i == cnt-1 {
 			curNode.label = l
-			for j := 0; j < len(methods); j++ {
-				curNode.actions[methods[j]] = &action{
-					middlewares: mws,
-					handler:     handler,
-				}
+			curNode.action = &action{
+				middlewares: mws,
+				handler:     handler,
 			}
 			break
 		}
@@ -195,11 +180,11 @@ func (rc *regCache) getReg(ptn string) (*regexp.Regexp, error) {
 var regC = &regCache{}
 
 // Search searches a path from a tree.
-func (t *tree) Search(method string, path string) (*action, []Param, error) {
+func (t *tree) Search(path string) (*action, []Param, error) {
 	path = cleanPath(path)
 	curNode := t.node
 
-	if path == "/" && curNode.actions[method] == nil {
+	if path == "/" && curNode.action == nil {
 		return nil, nil, ErrNotFound
 	}
 
@@ -216,21 +201,11 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 		}
 
 		idx := strings.Index(path, "/")
+		// ex. foo → foo
+		l = path
 		if idx > 0 {
 			// ex. foo/bar/baz → foo
 			l = path[:idx]
-		}
-		if idx == -1 {
-			// ex. foo → foo
-			l = path
-		}
-		if idx > 0 {
-			// ex. foo/bar/baz → foo
-			l = path[:idx]
-		}
-		if idx == -1 {
-			// ex. foo → foo
-			l = path
 		}
 
 		cc := curNode.children
@@ -248,7 +223,6 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 		if nextNode != nil {
 			curNode = nextNode
 			if idx > 0 {
-				l = path[:idx]
 				// foo/bar/baz → /bar/baz
 				path = path[idx:]
 			}
@@ -297,15 +271,15 @@ func (t *tree) Search(method string, path string) (*action, []Param, error) {
 		}
 	}
 
-	actions := curNode.actions[method]
-	if actions == nil {
+	action := curNode.action
+	if action.handler == nil {
 		// no matching handler and middlewares was found.
-		return nil, nil, ErrMethodNotAllowed
+		return nil, nil, ErrNotFound
 	}
 	if params == nil {
-		return actions, nil, nil
+		return action, nil, nil
 	}
-	return actions, *params, nil
+	return action, *params, nil
 }
 
 // getPattern gets a pattern from a label.
