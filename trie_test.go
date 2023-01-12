@@ -11,7 +11,7 @@ func TestNewTree(t *testing.T) {
 	expected := &tree{
 		node: &node{
 			label:    "/",
-			actions:  make(map[string]*action),
+			action:   &action{},
 			children: []*node{},
 		},
 	}
@@ -50,8 +50,7 @@ func TestGetParamsAndPutParams(t *testing.T) {
 
 // item is a set of routing definition.
 type item struct {
-	method string
-	path   string
+	path string
 }
 
 // caseWithFailure is a struct for testWithFailure.
@@ -64,7 +63,6 @@ type caseWithFailure struct {
 
 // insertItem is a struct for insert method.
 type insertItem struct {
-	methods     []string
 	path        string
 	handler     http.Handler
 	middlewares []middleware
@@ -72,8 +70,7 @@ type insertItem struct {
 
 // searchItem is a struct for search method.
 type searchItem struct {
-	method string
-	path   string
+	path string
 }
 
 func TestSearchFailure(t *testing.T) {
@@ -88,15 +85,13 @@ func TestSearchFailure(t *testing.T) {
 			// no matching path was found.
 			insertItems: []insertItem{
 				{
-					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
 					middlewares: []middleware{first},
 				},
 			},
 			searchItem: &searchItem{
-				method: http.MethodGet,
-				path:   "/foo/bar",
+				path: "/foo/bar",
 			},
 			expected: ErrNotFound,
 		},
@@ -104,15 +99,13 @@ func TestSearchFailure(t *testing.T) {
 			// no matching Param was found.
 			insertItems: []insertItem{
 				{
-					methods:     []string{http.MethodGet},
 					path:        `/foo/:id[^\d+$]`,
 					handler:     fooHandler,
 					middlewares: []middleware{first},
 				},
 			},
 			searchItem: &searchItem{
-				method: http.MethodGet,
-				path:   "/foo/name",
+				path: "/foo/name",
 			},
 			expected: ErrNotFound,
 		},
@@ -120,15 +113,13 @@ func TestSearchFailure(t *testing.T) {
 			// no matching Param was found.
 			insertItems: []insertItem{
 				{
-					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
 					middlewares: []middleware{first},
 				},
 			},
 			searchItem: &searchItem{
-				method: http.MethodGet,
-				path:   "/bar",
+				path: "/bar",
 			},
 			expected: ErrNotFound,
 		},
@@ -136,15 +127,13 @@ func TestSearchFailure(t *testing.T) {
 			// no matching handler and middlewares was found.
 			insertItems: []insertItem{
 				{
-					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
 					middlewares: []middleware{first},
 				},
 			},
 			searchItem: &searchItem{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expected: ErrNotFound,
 		},
@@ -152,26 +141,24 @@ func TestSearchFailure(t *testing.T) {
 			// no matching handler and middlewares was found.
 			insertItems: []insertItem{
 				{
-					methods:     []string{http.MethodGet},
 					path:        `/foo`,
 					handler:     fooHandler,
 					middlewares: []middleware{first},
 				},
 			},
 			searchItem: &searchItem{
-				method: http.MethodPost,
-				path:   "/foo",
+				path: "/fo",
 			},
-			expected: ErrMethodNotAllowed,
+			expected: ErrNotFound,
 		},
 	}
 
 	for _, c := range cases {
 		tree := newTree()
 		for _, i := range c.insertItems {
-			tree.Insert(i.methods, i.path, i.handler, i.middlewares)
+			tree.Insert(i.path, i.handler, i.middlewares)
 		}
-		actualAction, actualParams, err := tree.Search(c.searchItem.method, c.searchItem.path)
+		actualAction, actualParams, err := tree.Search(c.searchItem.path)
 		if actualAction != nil || actualParams != nil {
 			t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
 		}
@@ -187,14 +174,13 @@ func TestSearchOnlyRoot(t *testing.T) {
 
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/`, rootHandler, []middleware{first})
+	tree.Insert(`/`, rootHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: &action{
 				handler:     rootHandler,
@@ -205,8 +191,7 @@ func TestSearchOnlyRoot(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "//",
+				path: "//",
 			},
 			expectedAction: &action{
 				handler:     rootHandler,
@@ -217,8 +202,7 @@ func TestSearchOnlyRoot(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
+				path: "/foo",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -226,8 +210,7 @@ func TestSearchOnlyRoot(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar",
+				path: "/foo/bar",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -243,15 +226,14 @@ func TestSearchWithoutRoot(t *testing.T) {
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/foo`, fooHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/bar`, barHandler, []middleware{first})
+	tree.Insert(`/foo`, fooHandler, []middleware{first})
+	tree.Insert(`/bar`, barHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
+				path: "/foo",
 			},
 			expectedAction: &action{
 				handler:     fooHandler,
@@ -262,8 +244,7 @@ func TestSearchWithoutRoot(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/bar",
+				path: "/bar",
 			},
 			expectedAction: &action{
 				handler:     barHandler,
@@ -274,8 +255,7 @@ func TestSearchWithoutRoot(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -290,14 +270,13 @@ func TestSearchCommonPrefix(t *testing.T) {
 
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/foo`, fooHandler, []middleware{first})
+	tree.Insert(`/foo`, fooHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
+				path: "/foo",
 			},
 			expectedAction: &action{
 				handler:     fooHandler,
@@ -308,8 +287,7 @@ func TestSearchCommonPrefix(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -317,8 +295,7 @@ func TestSearchCommonPrefix(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/b",
+				path: "/b",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -326,8 +303,7 @@ func TestSearchCommonPrefix(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/f",
+				path: "/f",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -335,8 +311,7 @@ func TestSearchCommonPrefix(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/fo",
+				path: "/fo",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -344,8 +319,7 @@ func TestSearchCommonPrefix(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/fooo",
+				path: "/fooo",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -353,321 +327,9 @@ func TestSearchCommonPrefix(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar",
+				path: "/foo/bar",
 			},
 			expectedAction: nil,
-			expectedParams: []Param{},
-		},
-	}
-
-	testWithFailure(t, tree, cases)
-}
-
-func TestSearchAllMethod(t *testing.T) {
-	tree := newTree()
-
-	rootGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootPutHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootPatchHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootOptionsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooPutHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooPatchHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooOptionsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-
-	tree.Insert([]string{http.MethodGet}, `/`, rootGetHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPost}, `/`, rootPostHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPut}, `/`, rootPutHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPatch}, `/`, rootPatchHandler, []middleware{first})
-	tree.Insert([]string{http.MethodDelete}, `/`, rootDeleteHandler, []middleware{first})
-	tree.Insert([]string{http.MethodOptions}, `/`, rootOptionsHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo`, fooGetHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPost}, `/foo`, fooPostHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPut}, `/foo`, fooPutHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPatch}, `/foo`, fooPatchHandler, []middleware{first})
-	tree.Insert([]string{http.MethodDelete}, `/foo`, fooDeleteHandler, []middleware{first})
-	tree.Insert([]string{http.MethodOptions}, `/foo`, fooOptionsHandler, []middleware{first})
-
-	cases := []caseWithFailure{
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodGet,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootGetHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPost,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootPostHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPut,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootPutHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPatch,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootPatchHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodDelete,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootDeleteHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodOptions,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootOptionsHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooGetHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPost,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooPostHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPut,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooPutHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPatch,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooPatchHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodDelete,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooDeleteHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodOptions,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooOptionsHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-	}
-
-	testWithFailure(t, tree, cases)
-}
-
-func TestSearchPathCommonMultiMethods(t *testing.T) {
-	tree := newTree()
-
-	rootGetHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	rootPatchHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooGetPostHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	fooBarGetPostDeleteHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-
-	tree.Insert([]string{http.MethodGet}, `/`, rootGetHandler, []middleware{first})
-	tree.Insert([]string{http.MethodPost}, `/`, rootPostHandler, []middleware{second})
-	tree.Insert([]string{http.MethodDelete}, `/`, rootDeleteHandler, []middleware{third})
-	tree.Insert([]string{http.MethodPatch}, `/`, rootPatchHandler, []middleware{first, second, third})
-	tree.Insert([]string{http.MethodGet, http.MethodPost}, `/foo`, fooGetPostHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet, http.MethodPost, http.MethodDelete}, `/foo/bar`, fooBarGetPostDeleteHandler, []middleware{first})
-
-	cases := []caseWithFailure{
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodGet,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootGetHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPost,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootPostHandler,
-				middlewares: []middleware{second},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodDelete,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootDeleteHandler,
-				middlewares: []middleware{third},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPatch,
-				path:   "/",
-			},
-			expectedAction: &action{
-				handler:     rootPatchHandler,
-				middlewares: []middleware{first, second, third},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooGetPostHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPost,
-				path:   "/foo",
-			},
-			expectedAction: &action{
-				handler:     fooGetPostHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar",
-			},
-			expectedAction: &action{
-				handler:     fooBarGetPostDeleteHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodPost,
-				path:   "/foo/bar",
-			},
-			expectedAction: &action{
-				handler:     fooBarGetPostDeleteHandler,
-				middlewares: []middleware{first},
-			},
-			expectedParams: []Param{},
-		},
-		{
-			hasError: false,
-			item: &item{
-				method: http.MethodDelete,
-				path:   "/foo/bar",
-			},
-
-			expectedAction: &action{
-				handler:     fooBarGetPostDeleteHandler,
-				middlewares: []middleware{first},
-			},
 			expectedParams: []Param{},
 		},
 	}
@@ -683,17 +345,16 @@ func TestSearchTrailingSlash(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/`, rootHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/`, fooHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/bar/`, barHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/bar/`, fooBarHandler, []middleware{first})
+	tree.Insert(`/`, rootHandler, []middleware{first})
+	tree.Insert(`/foo/`, fooHandler, []middleware{first})
+	tree.Insert(`/bar/`, barHandler, []middleware{first})
+	tree.Insert(`/foo/bar/`, fooBarHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: &action{
 				handler:     rootHandler,
@@ -704,8 +365,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "//",
+				path: "//",
 			},
 			expectedAction: &action{
 				handler:     rootHandler,
@@ -716,8 +376,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/",
+				path: "/foo/",
 			},
 			expectedAction: &action{
 				handler:     fooHandler,
@@ -728,8 +387,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
+				path: "/foo",
 			},
 
 			expectedAction: &action{
@@ -741,8 +399,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/bar/",
+				path: "/bar/",
 			},
 
 			expectedAction: &action{
@@ -754,8 +411,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/bar",
+				path: "/bar",
 			},
 
 			expectedAction: &action{
@@ -767,8 +423,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar/",
+				path: "/foo/bar/",
 			},
 
 			expectedAction: &action{
@@ -780,8 +435,7 @@ func TestSearchTrailingSlash(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar",
+				path: "/foo/bar",
 			},
 
 			expectedAction: &action{
@@ -803,17 +457,16 @@ func TestSearchStaticPath(t *testing.T) {
 	barHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/`, rootHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo`, fooHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/bar`, barHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/bar`, fooBarHandler, []middleware{first})
+	tree.Insert(`/`, rootHandler, []middleware{first})
+	tree.Insert(`/foo`, fooHandler, []middleware{first})
+	tree.Insert(`/bar`, barHandler, []middleware{first})
+	tree.Insert(`/foo/bar`, fooBarHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: &action{
 				handler:     rootHandler,
@@ -824,8 +477,7 @@ func TestSearchStaticPath(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
+				path: "/foo",
 			},
 			expectedAction: &action{
 				handler:     fooHandler,
@@ -836,8 +488,7 @@ func TestSearchStaticPath(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/bar",
+				path: "/bar",
 			},
 			expectedAction: &action{
 				handler:     barHandler,
@@ -848,8 +499,7 @@ func TestSearchStaticPath(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/baz",
+				path: "/baz",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -857,8 +507,7 @@ func TestSearchStaticPath(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar",
+				path: "/foo/bar",
 			},
 			expectedAction: &action{
 				handler:     fooBarHandler,
@@ -869,8 +518,7 @@ func TestSearchStaticPath(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/baz",
+				path: "/foo/baz",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -878,8 +526,7 @@ func TestSearchStaticPath(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar/baz",
+				path: "/foo/bar/baz",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -897,17 +544,16 @@ func TestSearchPathWithParams(t *testing.T) {
 	fooIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooIDNameDateHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/:id`, idHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/:id`, fooIDHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/:id/:name`, fooIDNameHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/:id/:name/:date`, fooIDNameDateHandler, []middleware{first})
+	tree.Insert(`/:id`, idHandler, []middleware{first})
+	tree.Insert(`/foo/:id`, fooIDHandler, []middleware{first})
+	tree.Insert(`/foo/:id/:name`, fooIDNameHandler, []middleware{first})
+	tree.Insert(`/foo/:id/:name/:date`, fooIDNameDateHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/1",
+				path: "/1",
 			},
 			expectedAction: &action{
 				handler:     idHandler,
@@ -923,8 +569,7 @@ func TestSearchPathWithParams(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/1",
+				path: "/foo/1",
 			},
 			expectedAction: &action{
 				handler:     fooIDHandler,
@@ -940,8 +585,7 @@ func TestSearchPathWithParams(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/1/john",
+				path: "/foo/1/john",
 			},
 			expectedAction: &action{
 				handler:     fooIDNameHandler,
@@ -961,8 +605,7 @@ func TestSearchPathWithParams(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/1/john/2020",
+				path: "/foo/1/john/2020",
 			},
 			expectedAction: &action{
 				handler:     fooIDNameDateHandler,
@@ -998,19 +641,18 @@ func TestSearchPriority(t *testing.T) {
 	IDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	IDPriorityHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/`, rootHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/`, rootPriorityHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo`, fooHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo`, fooPriorityHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/:id`, IDHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/:id`, IDPriorityHandler, []middleware{first})
+	tree.Insert(`/`, rootHandler, []middleware{first})
+	tree.Insert(`/`, rootPriorityHandler, []middleware{first})
+	tree.Insert(`/foo`, fooHandler, []middleware{first})
+	tree.Insert(`/foo`, fooPriorityHandler, []middleware{first})
+	tree.Insert(`/:id`, IDHandler, []middleware{first})
+	tree.Insert(`/:id`, IDPriorityHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: &action{
 				handler:     rootPriorityHandler,
@@ -1021,8 +663,7 @@ func TestSearchPriority(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
+				path: "/foo",
 			},
 			expectedAction: &action{
 				handler:     fooPriorityHandler,
@@ -1033,8 +674,7 @@ func TestSearchPriority(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/1",
+				path: "/1",
 			},
 			expectedAction: &action{
 				handler:     IDPriorityHandler,
@@ -1064,21 +704,20 @@ func TestSearchRegexp(t *testing.T) {
 	fooBarIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodGet}, `/`, rootHandler, []middleware{first})
-	tree.Insert([]string{http.MethodOptions}, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo`, fooHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/:id[^\d+$]`, fooIDHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/bar`, fooBarHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/bar/:id`, fooBarIDHandler, []middleware{first})
-	tree.Insert([]string{http.MethodGet}, `/foo/bar/:id/:name`, fooBarIDNameHandler, []middleware{first})
+	tree.Insert(`/`, rootHandler, []middleware{first})
+	tree.Insert(`/:*[(.+)]`, rootWildCardHandler, []middleware{first})
+	tree.Insert(`/foo`, fooHandler, []middleware{first})
+	tree.Insert(`/foo/:id[^\d+$]`, fooIDHandler, []middleware{first})
+	tree.Insert(`/foo/:id[^\d+$]/:name[^\D+$]`, fooIDNameHandler, []middleware{first})
+	tree.Insert(`/foo/bar`, fooBarHandler, []middleware{first})
+	tree.Insert(`/foo/bar/:id`, fooBarIDHandler, []middleware{first})
+	tree.Insert(`/foo/bar/:id/:name`, fooBarIDNameHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: &action{
 				handler:     rootHandler,
@@ -1087,19 +726,9 @@ func TestSearchRegexp(t *testing.T) {
 			expectedParams: []Param{},
 		},
 		{
-			hasError: true,
-			item: &item{
-				method: http.MethodPost,
-				path:   "/",
-			},
-			expectedAction: nil,
-			expectedParams: []Param{},
-		},
-		{
 			hasError: false,
 			item: &item{
-				method: http.MethodOptions,
-				path:   "/wildcard",
+				path: "/wildcard",
 			},
 			expectedAction: &action{
 				handler:     rootWildCardHandler,
@@ -1115,8 +744,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodOptions,
-				path:   "/1234",
+				path: "/1234",
 			},
 			expectedAction: &action{
 				handler:     rootWildCardHandler,
@@ -1132,8 +760,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo",
+				path: "/foo",
 			},
 			expectedAction: &action{
 				handler:     fooHandler,
@@ -1142,19 +769,9 @@ func TestSearchRegexp(t *testing.T) {
 			expectedParams: []Param{},
 		},
 		{
-			hasError: true,
-			item: &item{
-				method: http.MethodGet,
-				path:   "/bar",
-			},
-			expectedAction: nil,
-			expectedParams: []Param{},
-		},
-		{
 			hasError: false,
 			item: &item{
-				method: http.MethodOptions,
-				path:   "/bar",
+				path: "/bar",
 			},
 			expectedAction: &action{
 				handler:     rootWildCardHandler,
@@ -1170,8 +787,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/1",
+				path: "/foo/1",
 			},
 			expectedAction: &action{
 				handler:     fooIDHandler,
@@ -1187,8 +803,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/notnumber",
+				path: "/foo/notnumber",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -1196,8 +811,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/1/john",
+				path: "/foo/1/john",
 			},
 			expectedAction: &action{
 				handler:     fooIDNameHandler,
@@ -1217,8 +831,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/1/1",
+				path: "/foo/1/1",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -1226,8 +839,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar",
+				path: "/foo/bar",
 			},
 			expectedAction: &action{
 				handler:     fooBarHandler,
@@ -1238,8 +850,7 @@ func TestSearchRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar/1",
+				path: "/foo/bar/1",
 			},
 			expectedAction: &action{
 				handler:     fooBarIDHandler,
@@ -1253,19 +864,9 @@ func TestSearchRegexp(t *testing.T) {
 			},
 		},
 		{
-			hasError: true,
-			item: &item{
-				method: http.MethodPost,
-				path:   "/foo/bar/1",
-			},
-			expectedAction: nil,
-			expectedParams: []Param{},
-		},
-		{
 			hasError: false,
 			item: &item{
-				method: http.MethodGet,
-				path:   "/foo/bar/1/john",
+				path: "/foo/bar/1/john",
 			},
 			expectedAction: &action{
 				handler:     fooBarIDNameHandler,
@@ -1293,15 +894,14 @@ func TestSearchWildCardRegexp(t *testing.T) {
 	rootHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	rootWildCardHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	tree.Insert([]string{http.MethodOptions}, `/`, rootHandler, []middleware{first})
-	tree.Insert([]string{http.MethodOptions}, `/:*[(.+)]`, rootWildCardHandler, []middleware{first})
+	tree.Insert(`/`, rootHandler, []middleware{first})
+	tree.Insert(`/:*[(.+)]`, rootWildCardHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodOptions,
-				path:   "/",
+				path: "/",
 			},
 			expectedAction: &action{
 				handler:     rootHandler,
@@ -1312,8 +912,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodOptions,
-				path:   "/wildcard",
+				path: "/wildcard",
 			},
 			expectedAction: &action{
 				handler:     rootWildCardHandler,
@@ -1329,8 +928,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 		{
 			hasError: false,
 			item: &item{
-				method: http.MethodOptions,
-				path:   "/1234",
+				path: "/1234",
 			},
 			expectedAction: &action{
 				handler:     rootWildCardHandler,
@@ -1346,8 +944,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 		{
 			hasError: true,
 			item: &item{
-				method: http.MethodOptions,
-				path:   "/1234/foo",
+				path: "/1234/foo",
 			},
 			expectedAction: nil,
 			expectedParams: []Param{},
@@ -1359,7 +956,7 @@ func TestSearchWildCardRegexp(t *testing.T) {
 
 func testWithFailure(t *testing.T, tree *tree, cases []caseWithFailure) {
 	for _, c := range cases {
-		actualAction, actualParams, err := tree.Search(c.item.method, c.item.path)
+		actualAction, actualParams, err := tree.Search(c.item.path)
 
 		if c.hasError {
 			if err == nil {

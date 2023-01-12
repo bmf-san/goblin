@@ -8,7 +8,7 @@ import (
 
 // Router represents the router which handles routing.
 type Router struct {
-	tree                    *tree
+	tree                    map[string]*tree
 	NotFoundHandler         http.Handler
 	MethodNotAllowedHandler http.Handler
 	DefaultOPTIONSHandler   http.Handler
@@ -33,9 +33,9 @@ var (
 )
 
 // NewRouter creates a new router.
-func NewRouter() Router {
-	return Router{
-		tree: newTree(),
+func NewRouter() *Router {
+	return &Router{
+		tree: map[string]*tree{},
 	}
 }
 
@@ -45,13 +45,13 @@ func (r *Router) UseGlobal(mws ...middleware) {
 }
 
 // Use sets middlewares.
-func (r Router) Use(mws ...middleware) Router {
+func (r *Router) Use(mws ...middleware) *Router {
 	nm := NewMiddlewares(mws)
 	tmpRoute.middlewares = nm
 	return r
 }
 
-func (r Router) Methods(methods ...string) Router {
+func (r *Router) Methods(methods ...string) *Router {
 	tmpRoute.methods = append(tmpRoute.methods, methods...)
 	return r
 }
@@ -64,14 +64,20 @@ func (r Router) Handler(path string, handler http.Handler) {
 }
 
 // Handle handles a route.
-func (r Router) Handle() {
-	r.tree.Insert(tmpRoute.methods, tmpRoute.path, tmpRoute.handler, tmpRoute.middlewares)
+func (r *Router) Handle() {
+	for i := 0; i < len(tmpRoute.methods); i++ {
+		_, ok := r.tree[tmpRoute.methods[i]]
+		if !ok {
+			r.tree[tmpRoute.methods[i]] = newTree()
+		}
+		r.tree[tmpRoute.methods[i]].Insert(tmpRoute.path, tmpRoute.handler, tmpRoute.middlewares)
+	}
 	tmpRoute = &route{}
 }
 
 // ServeHTTP dispatches the request to the handler whose
 // pattern most closely matches the request URL.
-func (r Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	method := req.Method
 	if method == http.MethodOptions {
 		if r.DefaultOPTIONSHandler != nil {
@@ -79,22 +85,24 @@ func (r Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	action, params, err := r.tree.Search(method, req.URL.Path)
+
+	t, ok := r.tree[method]
+	if !ok {
+		if r.MethodNotAllowedHandler == nil {
+			methodNotAllowedHandler().ServeHTTP(w, req)
+			return
+		}
+		r.MethodNotAllowedHandler.ServeHTTP(w, req)
+		return
+	}
+
+	action, params, err := t.Search(req.URL.Path)
 	if err == ErrNotFound {
 		if r.NotFoundHandler == nil {
 			http.NotFoundHandler().ServeHTTP(w, req)
 			return
 		}
 		r.NotFoundHandler.ServeHTTP(w, req)
-		return
-	}
-
-	if err == ErrMethodNotAllowed {
-		if r.MethodNotAllowedHandler == nil {
-			methodNotAllowedHandler().ServeHTTP(w, req)
-			return
-		}
-		r.MethodNotAllowedHandler.ServeHTTP(w, req)
 		return
 	}
 
