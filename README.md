@@ -11,7 +11,7 @@
 A golang http router based on trie tree.
 
 # Features
-- Support Go1.19 >= 1.16
+- Support Go1.20 >= 1.16
 - Easy to use
 - Lightweight
 - Fully compatible with net/http
