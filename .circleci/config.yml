@@ -36,8 +36,8 @@ jobs:
       - when:
           condition:
             or:
+              - equal: [ '1.20', << parameters.version >> ]
               - equal: [ '1.19', << parameters.version >> ]
-              - equal: [ '1.18', << parameters.version >> ]
           steps:
             - run:
                 name: "Install tools"
