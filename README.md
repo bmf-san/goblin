@@ -10,6 +10,10 @@
 
 A golang http router based on trie tree.
 
+<img src="https://storage.googleapis.com/gopherizeme.appspot.com/gophers/d654ddf2b81c2b4123684f93071af0cf559eb0b5.png" alt="goblin" title="goblin" width="250px">
+
+This logo was created by [gopherize.me](https://gopherize.me/gopher/d654ddf2b81c2b4123684f93071af0cf559eb0b5).
+
 # Features
 - Support Go1.20 >= 1.16
 - Easy to use
