@@ -51,6 +51,7 @@ func (r *Router) Use(mws ...middleware) *Router {
 	return r
 }
 
+// Use sets methods.
 func (r *Router) Methods(methods ...string) *Router {
 	tmpRoute.methods = append(tmpRoute.methods, methods...)
 	return r
