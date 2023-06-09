@@ -56,7 +56,7 @@ type Param struct {
 // getParams gets parameters.
 func (t *tree) getParams() *[]Param {
 	ps, _ := t.paramsPool.Get().(*[]Param)
-	*ps = (*ps)[0:0] // reset slice
+	*ps = (*ps)[:0] // reset slice
 	return ps
 }
 
@@ -116,9 +116,8 @@ func (t *tree) Insert(path string, handler http.Handler, mws middlewares) {
 				// foo/bar/baz → /bar/baz
 				path = path[idx:]
 			}
-		}
-		// Create a new node.
-		if nextNode == nil {
+		} else {
+			// Create a new node.
 			child := &node{
 				label:    l,
 				action:   &action{},
@@ -265,6 +264,7 @@ func (t *tree) Search(path string) (*action, []Param, error) {
 				}
 			}
 		}
+
 		if !isParamMatch {
 			// no matching path was found.
 			return nil, nil, ErrNotFound

@@ -111,7 +111,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// append globalMiddlewares to head of middlewares.
 	mws := append(r.globalMiddlewares, action.middlewares...)
 	if mws != nil {
-		h = mws.then(action.handler)
+		h = mws.then(h)
 	}
 	if params != nil {
 		ctx := context.WithValue(req.Context(), ParamsKey, params)
