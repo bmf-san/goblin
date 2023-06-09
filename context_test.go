@@ -18,6 +18,7 @@ func TestGetParam(t *testing.T) {
 	}
 
 	ctx := context.WithValue(context.Background(), ParamsKey, params)
+	ngCtx := context.WithValue(context.Background(), ParamsKey, "not a []Param")
 
 	cases := []struct {
 		actual   string
@@ -30,6 +31,14 @@ func TestGetParam(t *testing.T) {
 		{
 			actual:   GetParam(ctx, "name"),
 			expected: "john",
+		},
+		{
+			actual:   GetParam(ctx, "not-exist-key"),
+			expected: "",
+		},
+		{
+			actual:   GetParam(ngCtx, "ng ctx"),
+			expected: "",
 		},
 	}
 
