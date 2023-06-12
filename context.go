@@ -12,7 +12,7 @@ var ParamsKey = paramsKey{}
 
 // GetParam gets parameters from request.
 func GetParam(ctx context.Context, name string) string {
-	params, ok := ctx.Value(ParamsKey).([]Param)
+	params, ok := ctx.Value(ParamsKey).(Params)
 	if !ok {
 		return ""
 	}

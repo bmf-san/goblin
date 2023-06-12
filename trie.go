@@ -53,15 +53,17 @@ type Param struct {
 	value string
 }
 
+type Params []Param
+
 // getParams gets parameters.
-func (t *tree) getParams() *[]Param {
-	ps, _ := t.paramsPool.Get().(*[]Param)
+func (t *tree) getParams() *Params {
+	ps, _ := t.paramsPool.Get().(*Params)
 	*ps = (*ps)[:0] // reset slice
 	return ps
 }
 
 // putParams puts parameters.
-func (t *tree) putParams(ps *[]Param) {
+func (t *tree) putParams(ps *Params) {
 	if ps != nil {
 		t.paramsPool.Put(ps)
 	}
@@ -147,7 +149,7 @@ func (t *tree) Insert(path string, handler http.Handler, mws middlewares) {
 	}
 	if t.paramsPool.New == nil && t.maxParams > 0 {
 		t.paramsPool.New = func() interface{} {
-			p := make([]Param, 0, t.maxParams)
+			p := make(Params, 0, t.maxParams)
 			return &p
 		}
 	}
@@ -179,7 +181,7 @@ func (rc *regCache) getReg(ptn string) (*regexp.Regexp, error) {
 var regC = &regCache{}
 
 // Search searches a path from a tree.
-func (t *tree) Search(path string) (*action, []Param, error) {
+func (t *tree) Search(path string) (*action, Params, error) {
 	path = cleanPath(path)
 	curNode := t.node
 
@@ -191,7 +193,7 @@ func (t *tree) Search(path string) (*action, []Param, error) {
 
 	cnt := strings.Count(path, "/")
 	var l string
-	var params *[]Param
+	var params Params
 
 	for i := 0; i < cnt; i++ {
 		// Delete the / at head of path. ex. /foo/bar → foo/bar
@@ -246,15 +248,19 @@ func (t *tree) Search(path string) (*action, []Param, error) {
 				pn := getParamName(c.label)
 
 				if params == nil {
-					params = t.getParams()
+					ps := t.getParams()
+					params = (*ps)[0:1]
+					params[0] = Param{
+						key:   pn,
+						value: l,
+					}
+					t.putParams(ps)
+				} else {
+					params = append(params, Param{
+						key:   pn,
+						value: l,
+					})
 				}
-				lp := len(*params)
-				*params = (*params)[:lp+1]
-				(*params)[lp] = Param{
-					key:   pn,
-					value: l,
-				}
-				t.putParams(params)
 
 				curNode = c
 				isParamMatch = true
@@ -279,7 +285,7 @@ func (t *tree) Search(path string) (*action, []Param, error) {
 	if params == nil {
 		return action, nil, nil
 	}
-	return action, *params, nil
+	return action, params, nil
 }
 
 // getPattern gets a pattern from a label.
