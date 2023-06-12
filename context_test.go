@@ -6,7 +6,7 @@ import (
 )
 
 func TestGetParam(t *testing.T) {
-	params := []Param{
+	params := Params{
 		{
 			key:   "id",
 			value: "123",
