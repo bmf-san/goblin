@@ -275,9 +275,9 @@ Please see here!
 # Design
 This section describes the internal data structure of goblin.
 
-While [radix tree](https://ja.wikipedia.org/wiki/%E5%9F%BA%E6%95%B0%E6%9C%A8) is often employed in performance-optimized HTTP Routers, goblin uses [tri-tree](https https://en.wikipedia.org/wiki/%E3%83%88%E3%83%A9%E3%82%A4_(%E3%83%87%E3%83%BC%E3%82%BF%E6%A7%8B%E9%80%A0)).
+While [radix tree](https://en.wikipedia.org/wiki/Radix_tree) is often employed in performance-optimized HTTP Routers, goblin uses [trie tree](https://en.wikipedia.org/wiki/Trie).
 
-Compared to radix trees, tri-trees have a disadvantage in terms of performance due to inferior memory usage. However, the simplicity of the algorithm and ease of understanding are overwhelmingly in favor of the tri-tree.
+Compared to radix trees, trie tree have a disadvantage in terms of performance due to inferior memory usage. However, the simplicity of the algorithm and ease of understanding are overwhelmingly in favor of the trie tree.
 
 HTTP Router may seem like a simple application with a simple specification, but it is surprisingly complex. You can see this by looking at the test cases.
 (If you have an idea for a better-looking test case implementation, please let us know.)
