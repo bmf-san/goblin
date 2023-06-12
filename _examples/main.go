@@ -1,108 +1,48 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	goblin "github.com/bmf-san/goblin"
 )
 
-func customMethodNotFound() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "customMethodNotFound")
-	})
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
-func customMethodAllowed() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "customMethodNotAllowed")
-	})
+func RootHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
-func global(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "global: before\n")
-		next.ServeHTTP(w, r)
-		fmt.Fprintf(w, "global: after\n")
-	})
+func FooHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
-func first(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "first: before\n")
-		next.ServeHTTP(w, r)
-		fmt.Fprintf(w, "first: after\n")
-	})
+func FooBarHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
-func second(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "second: before\n")
-		next.ServeHTTP(w, r)
-		fmt.Fprintf(w, "second: after\n")
-	})
+func FooBarNameHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
-func third(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "third: before\n")
-		next.ServeHTTP(w, r)
-		fmt.Fprintf(w, "third: after\n")
-	})
+func FooNameHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+}
+
+func BazHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
 func main() {
 	r := goblin.NewRouter()
-	r.NotFoundHandler = customMethodNotFound()
-	r.MethodNotAllowedHandler = customMethodAllowed()
-	r.UseGlobal(global)
 
-	r.Methods(http.MethodGet).Use(first).Handler(`/middleware`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/middleware\n")
-		fmt.Fprintf(w, "middleware\n")
-	}))
-	r.Methods(http.MethodGet).Use(second, third).Handler(`/middlewares`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/middlewares\n")
-		fmt.Fprintf(w, "middlewares\n")
-	}))
-	r.Methods(http.MethodGet).Handler(`/`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/\n")
-		fmt.Fprintf(w, "/")
-	}))
-	r.Methods(http.MethodGet).Handler(`/foo`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo\n")
-		fmt.Fprintf(w, "/foo")
-	}))
-	r.Methods(http.MethodGet).Handler(`/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/bar\n")
-		fmt.Fprintf(w, "/bar")
-	}))
-	r.Methods(http.MethodGet).Handler(`/foo/bar`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "/foo/bar\n")
-		fmt.Fprintf(w, "/foo/bar")
-	}))
-	r.Methods(http.MethodGet).Handler(`/foo/bar/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/bar/:id\n")
-		fmt.Fprintf(w, "/foo/bar/%v\n", id)
-	}))
-	r.Methods(http.MethodGet).Handler(`/foo/bar/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		name := goblin.GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/bar/:id/:name\n")
-		fmt.Fprintf(w, "/foo/bar/%v/%v\n", id, name)
-	}))
-	r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		fmt.Fprintf(w, "/foo/:id[^\\d+$]\n")
-		fmt.Fprintf(w, "/foo/%v\n", id)
-	}))
-	r.Methods(http.MethodGet).Handler(`/foo/:id[^\d+$]/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := goblin.GetParam(r.Context(), "id")
-		name := goblin.GetParam(r.Context(), "name")
-		fmt.Fprintf(w, "/foo/:id[^\\d+$]/:name\n")
-		fmt.Fprintf(w, "/foo/%v/%v\n", id, name)
-	}))
+	r.Methods(http.MethodGet).Handler(`/`, RootHandler())
+	r.Methods(http.MethodGet, http.MethodPost).Use(CORS).Handler(`/foo`, FooHandler())
+	r.Methods(http.MethodGet).Handler(`/foo/bar`, FooBarHandler())
+	r.Methods(http.MethodGet).Handler(`/foo/bar/:name`, FooBarNameHandler())
+	r.Methods(http.MethodPost).Use(CORS).Handler(`/foo/:name`, FooNameHandler())
+	r.Methods(http.MethodGet).Handler(`/baz`, BazHandler())
 
 	http.ListenAndServe(":9999", r)
 }
