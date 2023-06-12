@@ -295,7 +295,7 @@ HTTP Routerは一見単純な仕様を持つアプリケーションに思える
 | GET | /foo | FooHandler | CORS |
 | POST | /foo | FooHandler | CORS |
 | GET | /foo/bar | FooBarHandler | N/A |
-| GET | /foo/bar/:name | FooBarNameHandler |
+| GET | /foo/bar/:name | FooBarNameHandler | N/A |
 | POST | /foo/:name | FooNameHandler | N/A|
 | GET | /baz | BazHandler | CORS |
 
