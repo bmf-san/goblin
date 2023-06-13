@@ -52,6 +52,8 @@ This logo was created by [gopherize.me](https://gopherize.me/gopher/d654ddf2b81c
   - Default OPTIONS handler
 - 0allocs
   - Achieve 0 allocations in static routing
+  - About 3allocs for named routes
+     - Heap allocation occurs when creating parameter slices and storing parameters in context
 
 # Install
 ```sh
