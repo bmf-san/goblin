@@ -1,6 +1,4 @@
-on:
-  repository_dispatch:
-    types: repo_profile_execution
+on: workflow_dispatch
 jobs:
   profile:
     runs-on: ubuntu-22.04
