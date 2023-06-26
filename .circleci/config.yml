@@ -12,7 +12,7 @@ jobs:
         type: boolean
         default: true
     docker:
-      - image: "cimg/go:<< parameters.version >>"
+      - image: "golang:<< parameters.version >>"
     working_directory: ~/go/src/github.com/bmf-san/goblin
     environment:
       GO111MODULE: "on"
