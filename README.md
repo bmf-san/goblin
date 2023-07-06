@@ -354,6 +354,12 @@ Or I would be happy to get a STAR.
 
 It motivates me to keep up with ongoing maintenance :D
 
+# Stargazers
+[![Stargazers repo roster for @bmf-san/goblin](https://reporoster.com/stars/bmf-san/goblin)](https://github.com/bmf-san/goblin/stargazers)
+
+# Forkers
+[![Forkers repo roster for @bmf-san/goblin](https://reporoster.com/forks/bmf-san/goblin)](https://github.com/bmf-san/goblin/network/members)
+
 # License
 Based on the MIT License.
 
