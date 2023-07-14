@@ -181,10 +181,6 @@ func (t *tree) Search(path string) (*action, Params, error) {
 	path = cleanPath(path)
 	curNode := t.node
 
-	if path == "/" && curNode.action == nil {
-		return nil, nil, ErrNotFound
-	}
-
 	path = removeTrailingSlash(path)
 
 	cnt := strings.Count(path, "/")
