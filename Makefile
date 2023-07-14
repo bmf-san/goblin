@@ -22,6 +22,9 @@ endif
 ifeq ($(shell command -v benchstat 2> /dev/null),)
 	go install golang.org/x/perf/cmd/benchstat@latest
 endif
+ifeq ($(shell govulncheck ./... 2> /dev/null),)
+	go install golang.org/x/vuln/cmd/govulncheck@latest
+endif
 
 .PHONY: gofmt
 gofmt: ## Run gofmt.
@@ -46,6 +49,10 @@ staticcheck: ## Run staticcheck.
 .PHONY: gosec
 gosec: ## Run gosec.
 	gosec -exclude-dir=_examples ./...
+
+.PHONY: govulncheck
+govulncheck: ## Run govulncheck.
+	govulncheck ./...
 
 .PHONY: test
 test: ## Run tests.
