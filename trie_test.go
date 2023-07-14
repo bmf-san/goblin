@@ -705,6 +705,7 @@ func TestSearchRegexp(t *testing.T) {
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	bazInvalidIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	tree.Insert(`/`, rootHandler, []middleware{first})
 	tree.Insert(`/:*[(.+)]`, rootWildCardHandler, []middleware{first})
@@ -714,6 +715,7 @@ func TestSearchRegexp(t *testing.T) {
 	tree.Insert(`/foo/bar`, fooBarHandler, []middleware{first})
 	tree.Insert(`/foo/bar/:id`, fooBarIDHandler, []middleware{first})
 	tree.Insert(`/foo/bar/:id/:name`, fooBarIDNameHandler, []middleware{first})
+	tree.Insert(`/baz/:id[[\d+]`, bazInvalidIDHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
@@ -884,6 +886,14 @@ func TestSearchRegexp(t *testing.T) {
 					value: "john",
 				},
 			},
+		},
+		{
+			hasError: true,
+			item: &item{
+				path: "/baz/1",
+			},
+			expectedAction: nil,
+			expectedParams: Params{},
 		},
 	}
 
