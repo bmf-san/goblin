@@ -1,8 +1,10 @@
 package goblin
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -1007,6 +1009,59 @@ func testWithFailure(t *testing.T, tree *tree, cases []caseWithFailure) {
 				t.Errorf("actualParam: %v expectedParam: %v\n", Param, c.expectedParams[i])
 			}
 		}
+	}
+}
+
+func TestGetReg(t *testing.T) {
+	cases := []struct {
+		name        string
+		ptn         string
+		isCached    bool
+		expectedReg *regexp.Regexp
+		expectedErr error
+	}{
+		{
+			name:        "Valid - no cache",
+			ptn:         `\d+`,
+			isCached:    false,
+			expectedReg: regexp.MustCompile(`\d+`),
+			expectedErr: nil,
+		},
+		{
+			name:        "Valid - cached",
+			ptn:         `\d+`,
+			isCached:    true,
+			expectedReg: regexp.MustCompile(`\d+`),
+			expectedErr: nil,
+		},
+		{
+			name:        "Invalid - regexp compile error",
+			ptn:         `[\d+`,
+			isCached:    false,
+			expectedReg: nil,
+			expectedErr: fmt.Errorf("error parsing regexp: missing closing ]: `[\\d+`"),
+		},
+	}
+
+	cache := regCache{}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.isCached {
+				cache.s.Store(c.ptn, c.expectedReg)
+			}
+			reg, err := cache.getReg(c.ptn)
+
+			if !reflect.DeepEqual(reg, c.expectedReg) {
+				t.Errorf("actual:%v expected:%v", reg, c.expectedReg)
+			}
+
+			if err != nil {
+				if err.Error() != c.expectedErr.Error() {
+					t.Errorf("actual:%v expected:%v", err.Error(), c.expectedErr.Error())
+				}
+			}
+		})
 	}
 }
 
