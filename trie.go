@@ -1,7 +1,6 @@
 package goblin
 
 import (
-	"fmt"
 	"net/http"
 	"path"
 	"regexp"
@@ -164,10 +163,7 @@ type regCache struct {
 func (rc *regCache) getReg(ptn string) (*regexp.Regexp, error) {
 	v, ok := rc.s.Load(ptn)
 	if ok {
-		reg, ok := v.(*regexp.Regexp)
-		if !ok {
-			return nil, fmt.Errorf("the value of %q is wrong", ptn)
-		}
+		reg, _ := v.(*regexp.Regexp)
 		return reg, nil
 	}
 	reg, err := regexp.Compile(ptn)
@@ -184,10 +180,6 @@ var regC = &regCache{}
 func (t *tree) Search(path string) (*action, Params, error) {
 	path = cleanPath(path)
 	curNode := t.node
-
-	if path == "/" && curNode.action == nil {
-		return nil, nil, ErrNotFound
-	}
 
 	path = removeTrailingSlash(path)
 
@@ -217,7 +209,6 @@ func (t *tree) Search(path string) (*action, Params, error) {
 				// no matching path was found.
 				return nil, nil, ErrNotFound
 			}
-			break
 		}
 
 		nextNode := curNode.getChild(l)

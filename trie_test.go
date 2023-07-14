@@ -1,8 +1,10 @@
 package goblin
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
+	"regexp"
 	"testing"
 )
 
@@ -703,6 +705,7 @@ func TestSearchRegexp(t *testing.T) {
 	fooBarHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	fooBarIDNameHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	bazInvalidIDHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
 	tree.Insert(`/`, rootHandler, []middleware{first})
 	tree.Insert(`/:*[(.+)]`, rootWildCardHandler, []middleware{first})
@@ -712,6 +715,7 @@ func TestSearchRegexp(t *testing.T) {
 	tree.Insert(`/foo/bar`, fooBarHandler, []middleware{first})
 	tree.Insert(`/foo/bar/:id`, fooBarIDHandler, []middleware{first})
 	tree.Insert(`/foo/bar/:id/:name`, fooBarIDNameHandler, []middleware{first})
+	tree.Insert(`/baz/:id[[\d+]`, bazInvalidIDHandler, []middleware{first})
 
 	cases := []caseWithFailure{
 		{
@@ -883,6 +887,14 @@ func TestSearchRegexp(t *testing.T) {
 				},
 			},
 		},
+		{
+			hasError: true,
+			item: &item{
+				path: "/baz/1",
+			},
+			expectedAction: nil,
+			expectedParams: Params{},
+		},
 	}
 
 	testWithFailure(t, tree, cases)
@@ -1007,6 +1019,59 @@ func testWithFailure(t *testing.T, tree *tree, cases []caseWithFailure) {
 				t.Errorf("actualParam: %v expectedParam: %v\n", Param, c.expectedParams[i])
 			}
 		}
+	}
+}
+
+func TestGetReg(t *testing.T) {
+	cases := []struct {
+		name        string
+		ptn         string
+		isCached    bool
+		expectedReg *regexp.Regexp
+		expectedErr error
+	}{
+		{
+			name:        "Valid - no cache",
+			ptn:         `\d+`,
+			isCached:    false,
+			expectedReg: regexp.MustCompile(`\d+`),
+			expectedErr: nil,
+		},
+		{
+			name:        "Valid - cached",
+			ptn:         `\d+`,
+			isCached:    true,
+			expectedReg: regexp.MustCompile(`\d+`),
+			expectedErr: nil,
+		},
+		{
+			name:        "Invalid - regexp compile error",
+			ptn:         `[\d+`,
+			isCached:    false,
+			expectedReg: nil,
+			expectedErr: fmt.Errorf("error parsing regexp: missing closing ]: `[\\d+`"),
+		},
+	}
+
+	cache := regCache{}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if c.isCached {
+				cache.s.Store(c.ptn, c.expectedReg)
+			}
+			reg, err := cache.getReg(c.ptn)
+
+			if !reflect.DeepEqual(reg, c.expectedReg) {
+				t.Errorf("actual:%v expected:%v", reg, c.expectedReg)
+			}
+
+			if err != nil {
+				if err.Error() != c.expectedErr.Error() {
+					t.Errorf("actual:%v expected:%v", err.Error(), c.expectedErr.Error())
+				}
+			}
+		})
 	}
 }
 
