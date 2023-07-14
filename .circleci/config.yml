@@ -54,6 +54,9 @@ jobs:
             - run:
                 name: "Run benchstat"
                 command: make benchstat
+            - run:
+                name: "Run govulncheck"
+                command: make govulncheck
       - run:
           name: Build go
           command: go build
