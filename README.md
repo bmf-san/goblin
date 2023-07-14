@@ -33,10 +33,13 @@ This logo was created by [gopherize.me](https://gopherize.me/gopher/d654ddf2b81c
 - [Design](#design)
 - [Contribution](#contribution)
 - [Sponsor](#sponsor)
+- [Stargazers](#stargazers)
+- [Forkers](#forkers)
 - [License](#license)
   - [Author](#author)
 
 # Features
+- Go1.20 >= 1.16
 - Simple data structure based on trie tree
 - Lightweight
   - Lines of codes: 2428
