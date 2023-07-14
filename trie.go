@@ -209,7 +209,6 @@ func (t *tree) Search(path string) (*action, Params, error) {
 				// no matching path was found.
 				return nil, nil, ErrNotFound
 			}
-			break
 		}
 
 		nextNode := curNode.getChild(l)
