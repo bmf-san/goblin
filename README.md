@@ -337,6 +337,8 @@ If you want to know more, use the debugger to take a peek at the internal struct
 
 If you have any ideas for improvements, please let us know!
 
+# Wiki
+References are listed on the [wiki](https://github.com/bmf-san/goblin/wiki).
 
 # Contribution
 Issues and Pull Requests are always welcome.
