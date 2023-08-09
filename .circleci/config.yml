@@ -36,7 +36,7 @@ jobs:
       - when:
           condition:
             or:
-              - equal: [ '1.21rc2', << parameters.version >> ]
+              - equal: [ '1.21', << parameters.version >> ]
               - equal: [ '1.20', << parameters.version >> ]
               - equal: [ '1.19', << parameters.version >> ]
           steps:
@@ -76,4 +76,4 @@ workflows:
       - test:
           matrix:
             parameters:
-              version: ["1.21rc2", "1.20", "1.19", "1.18", "1.17", "1.16"]
+              version: ["1.21", "1.20", "1.19", "1.18", "1.17", "1.16"]
