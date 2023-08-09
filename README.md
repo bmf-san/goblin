@@ -39,7 +39,7 @@ This logo was created by [gopherize.me](https://gopherize.me/gopher/d654ddf2b81c
   - [Author](#author)
 
 # Features
-- Go1.20 >= 1.16
+- Go1.21 >= 1.16
 - Simple data structure based on trie tree
 - Lightweight
   - Lines of codes: 2428
