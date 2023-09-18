@@ -36,7 +36,7 @@ This logo was created by [gopherize.me](https://gopherize.me/gopher/d654ddf2b81c
 - [Stargazers](#stargazers)
 - [Forkers](#forkers)
 - [License](#license)
-  - [Author](#author)
+- [Author](#author)
 
 # Features
 - Go1.21 >= 1.16
@@ -347,8 +347,8 @@ We would be happy to receive your contributions.
 
 Please review the following documents before making a contribution.
 
-[CODE_OF_CONDUCT](https://github.com/bmf-san/goblin/blob/master/.github/CODE_OF_CONDUCT.md)
-[CONTRIBUTING](https://github.com/bmf-san/goblin/blob/master/.github/CONTRIBUTING.md)
+- [CODE_OF_CONDUCT](https://github.com/bmf-san/goblin/blob/master/.github/CODE_OF_CONDUCT.md)
+- [CONTRIBUTING](https://github.com/bmf-san/goblin/blob/master/.github/CONTRIBUTING.md)
 
 # Sponsor
 If you like it, I would be happy to have you sponsor it!
@@ -370,7 +370,7 @@ Based on the MIT License.
 
 [LICENSE](https://github.com/bmf-san/goblin/blob/master/LICENSE)
 
-## Author
+# Author
 [bmf-san](https://github.com/bmf-san)
 
 - Email
