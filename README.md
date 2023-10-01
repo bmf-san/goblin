@@ -31,6 +31,7 @@ This logo was created by [gopherize.me](https://gopherize.me/gopher/d654ddf2b81c
   - [Default OPTIONS handler](#default-options-handler)
 - [Benchmark tests](#benchmark-tests)
 - [Design](#design)
+- [Wiki](#wiki)
 - [Contribution](#contribution)
 - [Sponsor](#sponsor)
 - [Stargazers](#stargazers)
@@ -66,7 +67,7 @@ go get -u github.com/bmf-san/goblin
 # Example
 A sample implementation is available.
 
-Please refer to [_examples](https://github.com/bmf-san/goblin/blob/master/_examples).
+Please refer to [example_goblin_test.go](https://github.com/bmf-san/goblin/blob/master/example_goblin_test.go).
 
 # Usage
 ## Method based routing
