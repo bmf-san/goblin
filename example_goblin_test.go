@@ -1,9 +1,9 @@
-package main
+package goblin_test
 
 import (
 	"net/http"
 
-	goblin "github.com/bmf-san/goblin"
+	"github.com/bmf-san/goblin"
 )
 
 func CORS(next http.Handler) http.Handler {
@@ -34,7 +34,7 @@ func BazHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
-func main() {
+func ExampleListenAndServe() {
 	r := goblin.NewRouter()
 
 	r.Methods(http.MethodGet).Handler(`/`, RootHandler())
