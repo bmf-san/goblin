@@ -1,9 +1,10 @@
-package main
+package goblin_test
 
 import (
+	"log"
 	"net/http"
 
-	goblin "github.com/bmf-san/goblin"
+	"github.com/bmf-san/goblin"
 )
 
 func CORS(next http.Handler) http.Handler {
@@ -34,7 +35,7 @@ func BazHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
 
-func main() {
+func ExampleListenAndServe() {
 	r := goblin.NewRouter()
 
 	r.Methods(http.MethodGet).Handler(`/`, RootHandler())
@@ -44,5 +45,7 @@ func main() {
 	r.Methods(http.MethodPost).Use(CORS).Handler(`/foo/:name`, FooNameHandler())
 	r.Methods(http.MethodGet).Handler(`/baz`, BazHandler())
 
-	http.ListenAndServe(":9999", r)
+	if err := http.ListenAndServe(":9999", r); err != nil {
+		log.Fatal(err)
+	}
 }

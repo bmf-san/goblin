@@ -31,6 +31,7 @@
   - [デフォルトOPTIONSハンドラー](#デフォルトoptionsハンドラー)
 - [ベンチマークテスト](#ベンチマークテスト)
 - [設計](#設計)
+- [Wiki](#wiki)
 - [コントリビューション](#コントリビューション)
 - [スポンサー](#スポンサー)
 - [ライセンス](#ライセンス)
@@ -64,7 +65,7 @@ go get -u github.com/bmf-san/goblin
 # 例
 サンプルの実装を用意しています。
 
-[_examples](https://github.com/bmf-san/goblin/blob/master/_examples)をご参照ください。
+[example_goblin_test.go](https://github.com/bmf-san/goblin/blob/master/example_goblin_test.go)をご参照ください。
 
 # 使い方
 ## メソッドベースのルーティング
@@ -334,6 +335,9 @@ HTTPメソッドごとに木を構築するようになっています。
 詳しく知りたい場合はデバッカーを使って内部構造を覗いてみてください。
 
 改善のアイデアがあればぜひ教えてください！
+
+# Wiki
+参考資料の一覧は[wiki](https://github.com/bmf-san/goblin/wiki)に記載しています。
 
 # コントリビューション
 IssueやPull Requestはいつでもお待ちしています。
