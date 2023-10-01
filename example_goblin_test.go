@@ -1,6 +1,7 @@
 package goblin_test
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/bmf-san/goblin"
@@ -44,5 +45,7 @@ func ExampleListenAndServe() {
 	r.Methods(http.MethodPost).Use(CORS).Handler(`/foo/:name`, FooNameHandler())
 	r.Methods(http.MethodGet).Handler(`/baz`, BazHandler())
 
-	http.ListenAndServe(":9999", r)
+	if err := http.ListenAndServe(":9999", r); err != nil {
+		log.Fatal(err)
+	}
 }
