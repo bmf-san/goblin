@@ -34,6 +34,8 @@
 - [Wiki](#wiki)
 - [コントリビューション](#コントリビューション)
 - [スポンサー](#スポンサー)
+- [Stargazers](#stargazers)
+- [Forkers](#forkers)
 - [ライセンス](#ライセンス)
   - [作者](#作者)
 
@@ -356,6 +358,12 @@ IssueやPull Requestはいつでもお待ちしています。
 あるいはstarを貰えると嬉しいです！
 
 継続的にメンテナンスしていく上でのモチベーションになります :D
+
+# Stargazers
+[![Stargazers repo roster for @bmf-san/goblin](https://reporoster.com/stars/bmf-san/goblin)](https://github.com/bmf-san/goblin/stargazers)
+
+# Forkers
+[![Forkers repo roster for @bmf-san/goblin](https://reporoster.com/forks/bmf-san/goblin)](https://github.com/bmf-san/goblin/network/members)
 
 # ライセンス
 MITライセンスに基づいています。
