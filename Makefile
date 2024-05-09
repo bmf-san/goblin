@@ -7,24 +7,12 @@ help:
 
 .PHONY: install-tools
 install-tools: ## Install staticcheck.
-ifeq ($(shell command -v staticcheck 2> /dev/null),)
 	go install honnef.co/go/tools/cmd/staticcheck@latest
-endif
-ifeq ($(shell command -v goimports 2> /dev/null),)
 	go install golang.org/x/tools/cmd/goimports@latest
-endif
-ifeq ($(shell command -v errcheck 2> /dev/null),)
 	go install github.com/kisielk/errcheck@latest
-endif
-ifeq ($(shell command -v gosec 2> /dev/null),)
 	go install github.com/securego/gosec/v2/cmd/gosec@latest
-endif
-ifeq ($(shell command -v benchstat 2> /dev/null),)
 	go install golang.org/x/perf/cmd/benchstat@latest
-endif
-ifeq ($(shell govulncheck ./... 2> /dev/null),)
 	go install golang.org/x/vuln/cmd/govulncheck@latest
-endif
 
 .PHONY: gofmt
 gofmt: ## Run gofmt.
