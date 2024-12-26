@@ -63,6 +63,14 @@ type caseWithFailure struct {
 	expectedParams Params
 }
 
+func (c caseWithFailure) name() string {
+	prefix := ""
+	if !c.hasError {
+		prefix = "no "
+	}
+	return fmt.Sprintf("%serror with %s path", prefix, c.item.path)
+}
+
 // insertItem is a struct for insert method.
 type insertItem struct {
 	path        string
@@ -75,16 +83,19 @@ type searchItem struct {
 	path string
 }
 
+type searchFailureTest struct {
+	name        string
+	insertItems []insertItem
+	searchItem  *searchItem
+	expected    error
+}
+
 func TestSearchFailure(t *testing.T) {
 	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 
-	cases := []struct {
-		insertItems []insertItem
-		searchItem  *searchItem
-		expected    error
-	}{
+	cases := []searchFailureTest{
 		{
-			// no matching path was found.
+			name: "no matching path was found",
 			insertItems: []insertItem{
 				{
 					path:        `/foo`,
@@ -98,7 +109,7 @@ func TestSearchFailure(t *testing.T) {
 			expected: ErrNotFound,
 		},
 		{
-			// no matching Param was found.
+			name: "no matching Param was found with path regex",
 			insertItems: []insertItem{
 				{
 					path:        `/foo/:id[^\d+$]`,
@@ -112,7 +123,7 @@ func TestSearchFailure(t *testing.T) {
 			expected: ErrNotFound,
 		},
 		{
-			// no matching Param was found.
+			name: "no matching Param was found",
 			insertItems: []insertItem{
 				{
 					path:        `/foo`,
@@ -126,7 +137,7 @@ func TestSearchFailure(t *testing.T) {
 			expected: ErrNotFound,
 		},
 		{
-			// no matching handler and middlewares was found.
+			name: "matching handler and middlewares was found 1",
 			insertItems: []insertItem{
 				{
 					path:        `/foo`,
@@ -140,7 +151,7 @@ func TestSearchFailure(t *testing.T) {
 			expected: ErrNotFound,
 		},
 		{
-			// no matching handler and middlewares was found.
+			name: "matching handler and middlewares was found 2",
 			insertItems: []insertItem{
 				{
 					path:        `/foo`,
@@ -156,18 +167,20 @@ func TestSearchFailure(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		tree := newTree()
-		for _, i := range c.insertItems {
-			tree.Insert(i.path, i.handler, i.middlewares)
-		}
-		actualAction, actualParams, err := tree.Search(c.searchItem.path)
-		if actualAction != nil || actualParams != nil {
-			t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			tree := newTree()
+			for _, i := range c.insertItems {
+				tree.Insert(i.path, i.handler, i.middlewares)
+			}
+			actualAction, actualParams, err := tree.Search(c.searchItem.path)
+			if actualAction != nil || actualParams != nil {
+				t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
+			}
 
-		if err != c.expected {
-			t.Fatalf("err: %v expected: %v\n", err, c.expected)
-		}
+			if err != c.expected {
+				t.Fatalf("err: %v expected: %v\n", err, c.expected)
+			}
+		})
 	}
 }
 
@@ -967,58 +980,59 @@ func TestSearchWildCardRegexp(t *testing.T) {
 }
 
 func testWithFailure(t *testing.T, tree *tree, cases []caseWithFailure) {
+	t.Helper()
 	for _, c := range cases {
-		actualAction, actualParams, err := tree.Search(c.item.path)
+		t.Run(c.name(), func(t *testing.T) {
+			actualAction, actualParams, err := tree.Search(c.item.path)
 
-		if c.hasError {
-			if err == nil {
-				t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
-			}
+			if c.hasError {
+				if err == nil {
+					t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
+				}
 
-			if actualAction != c.expectedAction {
-				t.Errorf("actualAction:%v expectedAction:%v", actualAction, c.expectedAction)
-			}
+				if actualAction != c.expectedAction {
+					t.Errorf("actualAction:%v expectedAction:%v", actualAction, c.expectedAction)
+				}
 
-			if len(actualParams) != len(c.expectedParams) {
-				t.Errorf("actualParams: %v expectedParams: %v\n", len(actualParams), len(c.expectedParams))
-			}
+				if len(actualParams) != len(c.expectedParams) {
+					t.Errorf("actualParams: %v expectedParams: %v\n", len(actualParams), len(c.expectedParams))
+				}
 
-			for i, Param := range actualParams {
-				if !reflect.DeepEqual(Param, c.expectedParams[i]) {
-					t.Errorf("actualParams: %v expectedParams: %v\n", Param, c.expectedParams[i])
+				for i, Param := range actualParams {
+					if !reflect.DeepEqual(Param, c.expectedParams[i]) {
+						t.Errorf("actualParams: %v expectedParams: %v\n", Param, c.expectedParams[i])
+					}
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
+				}
+
+				if reflect.ValueOf(actualAction.handler) != reflect.ValueOf(c.expectedAction.handler) {
+					t.Errorf("actualActionHandler:%v expectedActionHandler:%v", actualAction.handler, c.expectedAction.handler)
+				}
+
+				if len(actualAction.middlewares) != len(c.expectedAction.middlewares) {
+					t.Errorf("actualActionMiddlewares: %v expectedActionsMiddleware: %v\n", len(actualAction.middlewares), len(c.expectedAction.middlewares))
+				}
+
+				for i, mws := range actualAction.middlewares {
+					if reflect.ValueOf(mws) != reflect.ValueOf(c.expectedAction.middlewares[i]) {
+						t.Errorf("actualActionsMiddleware: %v expectedActionsMiddleware: %v\n", mws, c.expectedAction.middlewares[i])
+					}
+				}
+
+				if len(actualParams) != len(c.expectedParams) {
+					t.Errorf("actualParams: %v expectedParams: %v\n", len(actualParams), len(c.expectedParams))
+				}
+
+				for i, Param := range actualParams {
+					if !reflect.DeepEqual(Param, c.expectedParams[i]) {
+						t.Errorf("actualParam: %v expectedParam: %v\n", Param, c.expectedParams[i])
+					}
 				}
 			}
-
-			continue
-		}
-
-		if err != nil {
-			t.Fatalf("actualAction: %v actualParams: %v expected err: %v", actualAction, actualParams, err)
-		}
-
-		if reflect.ValueOf(actualAction.handler) != reflect.ValueOf(c.expectedAction.handler) {
-			t.Errorf("actualActionHandler:%v expectedActionHandler:%v", actualAction.handler, c.expectedAction.handler)
-		}
-
-		if len(actualAction.middlewares) != len(c.expectedAction.middlewares) {
-			t.Errorf("actualActionMiddlewares: %v expectedActionsMiddleware: %v\n", len(actualAction.middlewares), len(c.expectedAction.middlewares))
-		}
-
-		for i, mws := range actualAction.middlewares {
-			if reflect.ValueOf(mws) != reflect.ValueOf(c.expectedAction.middlewares[i]) {
-				t.Errorf("actualActionsMiddleware: %v expectedActionsMiddleware: %v\n", mws, c.expectedAction.middlewares[i])
-			}
-		}
-
-		if len(actualParams) != len(c.expectedParams) {
-			t.Errorf("actualParams: %v expectedParams: %v\n", len(actualParams), len(c.expectedParams))
-		}
-
-		for i, Param := range actualParams {
-			if !reflect.DeepEqual(Param, c.expectedParams[i]) {
-				t.Errorf("actualParam: %v expectedParam: %v\n", Param, c.expectedParams[i])
-			}
-		}
+		})
 	}
 }
 
@@ -1077,142 +1091,175 @@ func TestGetReg(t *testing.T) {
 
 func TestGetPattern(t *testing.T) {
 	cases := []struct {
+		name     string
 		actual   string
 		expected string
 	}{
 		{
+			name:     "valid pattern",
 			actual:   getPattern(`:id[^\d+$]`),
 			expected: `^\d+$`,
 		},
 		{
+			name:     "invalid pattern one",
 			actual:   getPattern(`:id[`),
 			expected: "",
 		},
 		{
+			name:     "invalid pattern two",
 			actual:   getPattern(`:id]`),
 			expected: "",
 		},
 		{
+			name:     "missing pattern",
 			actual:   getPattern(`:id`),
 			expected: "",
 		},
 	}
 
 	for _, c := range cases {
-		if c.actual != c.expected {
-			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			if c.actual != c.expected {
+				t.Errorf("actual:%v expected:%v", c.actual, c.expected)
+			}
+		})
 	}
 }
 
 func TestGetParamName(t *testing.T) {
 	cases := []struct {
+		name     string
 		actual   string
 		expected string
 	}{
 		{
+			name:     "valid pattern",
 			actual:   getParamName(`:id[^\d+$]`),
 			expected: "id",
 		},
 		{
+			name:     "invalid pattern one",
 			actual:   getParamName(`:id[`),
 			expected: "id",
 		},
 		{
+			name:     "invalid pattern two",
 			actual:   getParamName(`:id]`),
 			expected: "id]",
 		},
 		{
+			name:     "missing pattern",
 			actual:   getParamName(`:id`),
 			expected: "id",
 		},
 	}
 
 	for _, c := range cases {
-		if c.actual != c.expected {
-			t.Errorf("actual:%v expected:%v", c.actual, c.expected)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			if c.actual != c.expected {
+				t.Errorf("actual:%v expected:%v", c.actual, c.expected)
+			}
+		})
 	}
 }
 
 func TestCleanPath(t *testing.T) {
 	cases := []struct {
+		name     string
 		path     string
 		expected string
 	}{
 		{
+			name:     "missing root",
 			path:     "",
 			expected: "/",
 		},
 		{
+			name:     "one extra trailing slash",
 			path:     "//",
 			expected: "/",
 		},
 		{
+			name:     "two extra trailing slashes",
 			path:     "///",
 			expected: "/",
 		},
 		{
+			name:     "missing leading slash",
 			path:     "path",
 			expected: "/path",
 		},
 		{
+			name:     "valid root",
 			path:     "/",
 			expected: "/",
 		},
 		{
+			name:     "valid path with trailing slash",
 			path:     "/path/trailingslash/",
 			expected: "/path/trailingslash/",
 		},
 		{
+			name:     "valid path with extra trailing slash",
 			path:     "path/trailingslash//",
 			expected: "/path/trailingslash/",
 		},
 	}
 
 	for _, c := range cases {
-		actual := cleanPath(c.path)
-		if actual != c.expected {
-			t.Errorf("actual: %v expected: %v\n", actual, c.expected)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			actual := cleanPath(c.path)
+			if actual != c.expected {
+				t.Errorf("actual: %v expected: %v\n", actual, c.expected)
+			}
+		})
 	}
 }
 
 func TestRemoveTrailingSlash(t *testing.T) {
 	cases := []struct {
+		name     string
 		path     string
 		expected string
 	}{
 		{
+			name:     "one extra trailing slash",
 			path:     "//",
 			expected: "/",
 		},
 		{
+			name:     "two extra trailing slashes",
 			path:     "///",
 			expected: "//",
 		},
 		{
+			name:     "plain path",
 			path:     "path",
 			expected: "path",
 		},
 		{
+			name:     "root",
 			path:     "/",
 			expected: "",
 		},
 		{
+			name:     "path with trailing slash",
 			path:     "/path/trailingslash/",
 			expected: "/path/trailingslash",
 		},
 		{
+			name:     "path with extra trailing slash",
 			path:     "/path/trailingslash//",
 			expected: "/path/trailingslash/",
 		},
 	}
 
 	for _, c := range cases {
-		actual := removeTrailingSlash(c.path)
-		if actual != c.expected {
-			t.Errorf("actual: %v expected: %v\n", actual, c.expected)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			actual := removeTrailingSlash(c.path)
+			if actual != c.expected {
+				t.Errorf("actual: %v expected: %v\n", actual, c.expected)
+			}
+		})
 	}
 }

@@ -20,6 +20,17 @@ func TestNewRouter(t *testing.T) {
 	}
 }
 
+type routerTest struct {
+	path   string
+	method string
+	code   int
+	body   string
+}
+
+func (tc routerTest) name() string {
+	return fmt.Sprintf("%s_%s_%d", tc.method, tc.path, tc.code)
+}
+
 func TestRouterMiddleware(t *testing.T) {
 	r := NewRouter()
 
@@ -34,12 +45,7 @@ func TestRouterMiddleware(t *testing.T) {
 		fmt.Fprintf(w, "/middlewares\n")
 	}))
 
-	cases := []struct {
-		path   string
-		method string
-		code   int
-		body   string
-	}{
+	cases := []routerTest{
 		{
 			path:   "/globalmiddleware",
 			method: http.MethodGet,
@@ -61,22 +67,25 @@ func TestRouterMiddleware(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req := httptest.NewRequest(c.method, c.path, nil)
-		rec := httptest.NewRecorder()
+		t.Run(c.name(), func(t *testing.T) {
+			req := httptest.NewRequest(c.method, c.path, nil)
+			rec := httptest.NewRecorder()
 
-		r.ServeHTTP(rec, req)
+			r.ServeHTTP(rec, req)
 
-		if rec.Code != c.code {
-			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
-		}
+			if rec.Code != c.code {
+				t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
+			}
 
-		recBody, _ := io.ReadAll(rec.Body)
-		body := string(recBody)
-		if body != c.body {
-			t.Errorf("actual: %v expected: %v\n", body, c.body)
-		}
+			recBody, _ := io.ReadAll(rec.Body)
+			body := string(recBody)
+			if body != c.body {
+				t.Errorf("actual: %v expected: %v\n", body, c.body)
+			}
+		})
 	}
 }
+
 func TestRouter(t *testing.T) {
 	r := NewRouter()
 
@@ -142,12 +151,7 @@ func TestRouter(t *testing.T) {
 		fmt.Fprintf(w, "/%v", id)
 	}))
 
-	cases := []struct {
-		path   string
-		method string
-		code   int
-		body   string
-	}{
+	cases := []routerTest{
 		{
 			path:   "/",
 			method: http.MethodGet,
@@ -247,20 +251,22 @@ func TestRouter(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req := httptest.NewRequest(c.method, c.path, nil)
-		rec := httptest.NewRecorder()
+		t.Run(c.name(), func(t *testing.T) {
+			req := httptest.NewRequest(c.method, c.path, nil)
+			rec := httptest.NewRecorder()
 
-		r.ServeHTTP(rec, req)
+			r.ServeHTTP(rec, req)
 
-		if rec.Code != c.code {
-			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
-		}
+			if rec.Code != c.code {
+				t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
+			}
 
-		recBody, _ := io.ReadAll(rec.Body)
-		body := string(recBody)
-		if body != c.body {
-			t.Errorf("actual: %v expected: %v\n", body, c.body)
-		}
+			recBody, _ := io.ReadAll(rec.Body)
+			body := string(recBody)
+			if body != c.body {
+				t.Errorf("actual: %v expected: %v\n", body, c.body)
+			}
+		})
 	}
 }
 
@@ -269,11 +275,7 @@ func TestDefaultErrorHandler(t *testing.T) {
 	r.Methods(http.MethodGet).Handler(`/defaulterrorhandler`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	r.Methods(http.MethodGet).Handler(`/methodnotallowed`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
-	cases := []struct {
-		path   string
-		method string
-		code   int
-	}{
+	cases := []routerTest{
 		{
 			path:   "/",
 			method: http.MethodGet,
@@ -287,14 +289,16 @@ func TestDefaultErrorHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req := httptest.NewRequest(c.method, c.path, nil)
-		rec := httptest.NewRecorder()
+		t.Run(c.name(), func(t *testing.T) {
+			req := httptest.NewRequest(c.method, c.path, nil)
+			rec := httptest.NewRecorder()
 
-		r.ServeHTTP(rec, req)
+			r.ServeHTTP(rec, req)
 
-		if rec.Code != c.code {
-			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
-		}
+			if rec.Code != c.code {
+				t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
+			}
+		})
 	}
 }
 
@@ -311,12 +315,7 @@ func TestCustomErrorHandler(t *testing.T) {
 	r.Methods(http.MethodGet).Handler(`/custommethodnotfound`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	r.Methods(http.MethodGet).Handler(`/custommethodnotallowed`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 
-	cases := []struct {
-		path   string
-		method string
-		code   int
-		body   string
-	}{
+	cases := []routerTest{
 		{
 			path:   "/",
 			method: http.MethodGet,
@@ -332,20 +331,22 @@ func TestCustomErrorHandler(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		req := httptest.NewRequest(c.method, c.path, nil)
-		rec := httptest.NewRecorder()
+		t.Run(c.name(), func(t *testing.T) {
+			req := httptest.NewRequest(c.method, c.path, nil)
+			rec := httptest.NewRecorder()
 
-		r.ServeHTTP(rec, req)
+			r.ServeHTTP(rec, req)
 
-		if rec.Code != c.code {
-			t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
-		}
+			if rec.Code != c.code {
+				t.Errorf("actual: %v expected: %v\n", rec.Code, c.code)
+			}
 
-		recBody, _ := io.ReadAll(rec.Body)
-		body := string(recBody)
-		if body != c.body {
-			t.Errorf("actual: %v expected: %v\n", body, c.body)
-		}
+			recBody, _ := io.ReadAll(rec.Body)
+			body := string(recBody)
+			if body != c.body {
+				t.Errorf("actual: %v expected: %v\n", body, c.body)
+			}
+		})
 	}
 }
 
