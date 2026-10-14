@@ -6,18 +6,116 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sync"
 	"testing"
 )
 
 func TestNewRouter(t *testing.T) {
 	actual := NewRouter()
 	expected := &Router{
-		tree: map[string]*tree{},
+		tree:    map[string]*tree{},
+		pending: &route{},
 	}
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("actual:%v expected:%v\n", actual, expected)
 	}
+}
+
+func TestRouterIndependentRegistration(t *testing.T) {
+	for _, firstFinishesFirst := range []bool{false, true} {
+		t.Run(fmt.Sprintf("firstFinishesFirst=%t", firstFinishesFirst), func(t *testing.T) {
+			r1 := NewRouter()
+			r1.Methods(http.MethodGet).Use(first).Methods(http.MethodPatch)
+			r2 := NewRouter()
+			r2.Use(second).Methods(http.MethodPost)
+
+			h1 := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, "one\n")
+			})
+			h2 := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, "two\n")
+			})
+			if firstFinishesFirst {
+				r1.Handler("/route", h1)
+				r2.Handler("/route", h2)
+			} else {
+				r2.Handler("/route", h2)
+				r1.Handler("/route", h1)
+			}
+
+			cases := []struct {
+				name   string
+				router *Router
+				method string
+				code   int
+				body   string
+			}{
+				{"first GET", r1, http.MethodGet, http.StatusOK, "first: before\none\nfirst: after\n"},
+				{"first PATCH", r1, http.MethodPatch, http.StatusOK, "first: before\none\nfirst: after\n"},
+				{"first POST", r1, http.MethodPost, http.StatusMethodNotAllowed, ""},
+				{"second POST", r2, http.MethodPost, http.StatusOK, "second: before\ntwo\nsecond: after\n"},
+				{"second GET", r2, http.MethodGet, http.StatusMethodNotAllowed, ""},
+				{"second PATCH", r2, http.MethodPatch, http.StatusMethodNotAllowed, ""},
+			}
+			for _, c := range cases {
+				t.Run(c.name, func(t *testing.T) {
+					rec := httptest.NewRecorder()
+					c.router.ServeHTTP(rec, httptest.NewRequest(c.method, "/route", nil))
+					if rec.Code != c.code || rec.Body.String() != c.body {
+						t.Errorf("got (%d, %q), want (%d, %q)", rec.Code, rec.Body.String(), c.code, c.body)
+					}
+				})
+			}
+
+			r1.Methods(http.MethodDelete).Handler("/next", h1)
+			r2.Methods(http.MethodPut).Handler("/next", h2)
+			for _, c := range []struct {
+				name   string
+				router *Router
+				method string
+				code   int
+				body   string
+			}{
+				{"first reset", r1, http.MethodDelete, http.StatusOK, "one\n"},
+				{"second reset", r2, http.MethodPut, http.StatusOK, "two\n"},
+				{"first old method", r1, http.MethodGet, http.StatusNotFound, "404 page not found\n"},
+				{"second old method", r2, http.MethodPost, http.StatusNotFound, "404 page not found\n"},
+			} {
+				t.Run(c.name, func(t *testing.T) {
+					rec := httptest.NewRecorder()
+					c.router.ServeHTTP(rec, httptest.NewRequest(c.method, "/next", nil))
+					if rec.Code != c.code || rec.Body.String() != c.body {
+						t.Errorf("got (%d, %q), want (%d, %q)", rec.Code, rec.Body.String(), c.code, c.body)
+					}
+				})
+			}
+		})
+	}
+}
+
+func TestRouterParallelRegistration(t *testing.T) {
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete} {
+		wg.Add(1)
+		go func(method string) {
+			defer wg.Done()
+			r := NewRouter()
+			<-start
+			r.Methods(method).Use(first).Handler("/route", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, method+"\n")
+			}))
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, httptest.NewRequest(method, "/route", nil))
+			body := "first: before\n" + method + "\nfirst: after\n"
+			if rec.Code != http.StatusOK || rec.Body.String() != body {
+				t.Errorf("%s got (%d, %q), want (200, %q)", method, rec.Code, rec.Body.String(), body)
+			}
+		}(method)
+	}
+	close(start)
+	wg.Wait()
 }
 
 type routerTest struct {

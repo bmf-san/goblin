@@ -13,6 +13,7 @@ type Router struct {
 	MethodNotAllowedHandler http.Handler
 	DefaultOPTIONSHandler   http.Handler
 	globalMiddlewares       middlewares
+	pending                 *route
 }
 
 // route represents the route which has data for a routing.
@@ -24,8 +25,6 @@ type route struct {
 }
 
 var (
-	tmpRoute = &route{}
-
 	// Error for not found.
 	ErrNotFound = errors.New("no matching route was found")
 	// Error for method not allowed.
@@ -35,7 +34,8 @@ var (
 // NewRouter creates a new router.
 func NewRouter() *Router {
 	return &Router{
-		tree: map[string]*tree{},
+		tree:    map[string]*tree{},
+		pending: &route{},
 	}
 }
 
@@ -47,33 +47,33 @@ func (r *Router) UseGlobal(mws ...middleware) {
 // Use sets middlewares.
 func (r *Router) Use(mws ...middleware) *Router {
 	nm := NewMiddlewares(mws)
-	tmpRoute.middlewares = nm
+	r.pending.middlewares = nm
 	return r
 }
 
 // Use sets methods.
 func (r *Router) Methods(methods ...string) *Router {
-	tmpRoute.methods = append(tmpRoute.methods, methods...)
+	r.pending.methods = append(r.pending.methods, methods...)
 	return r
 }
 
 // Handler sets a handler.
 func (r Router) Handler(path string, handler http.Handler) {
-	tmpRoute.handler = handler
-	tmpRoute.path = path
+	r.pending.handler = handler
+	r.pending.path = path
 	r.Handle()
 }
 
 // Handle handles a route.
 func (r *Router) Handle() {
-	for i := 0; i < len(tmpRoute.methods); i++ {
-		_, ok := r.tree[tmpRoute.methods[i]]
+	for i := 0; i < len(r.pending.methods); i++ {
+		_, ok := r.tree[r.pending.methods[i]]
 		if !ok {
-			r.tree[tmpRoute.methods[i]] = newTree()
+			r.tree[r.pending.methods[i]] = newTree()
 		}
-		r.tree[tmpRoute.methods[i]].Insert(tmpRoute.path, tmpRoute.handler, tmpRoute.middlewares)
+		r.tree[r.pending.methods[i]].Insert(r.pending.path, r.pending.handler, r.pending.middlewares)
 	}
-	tmpRoute = &route{}
+	*r.pending = route{}
 }
 
 // ServeHTTP dispatches the request to the handler whose
