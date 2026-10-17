@@ -368,6 +368,27 @@ func TestRouter(t *testing.T) {
 	}
 }
 
+func TestRouterPathValue(t *testing.T) {
+	r := NewRouter()
+
+	r.Methods(http.MethodGet).Handler(`/foo/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		name := r.PathValue("name")
+		fmt.Fprintf(w, "/foo/%v/%v", id, name)
+	}))
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/foo/1/goblin", nil))
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("actual: %v expected: %v\n", rec.Code, http.StatusOK)
+	}
+
+	if rec.Body.String() != "/foo/1/goblin" {
+		t.Errorf("actual: %v expected: %v\n", rec.Body.String(), "/foo/1/goblin")
+	}
+}
+
 func TestDefaultErrorHandler(t *testing.T) {
 	r := NewRouter()
 	r.Methods(http.MethodGet).Handler(`/defaulterrorhandler`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
