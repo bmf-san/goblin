@@ -371,21 +371,73 @@ func TestRouter(t *testing.T) {
 func TestRouterPathValue(t *testing.T) {
 	r := NewRouter()
 
-	r.Methods(http.MethodGet).Handler(`/foo/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := r.PathValue("id")
-		name := r.PathValue("name")
-		fmt.Fprintf(w, "/foo/%v/%v", id, name)
-	}))
+	var mwID string
+	mw := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mwID = r.PathValue("id")
+			next.ServeHTTP(w, r)
+		})
+	}
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "id=%v name=%v getparam_id=%v", r.PathValue("id"), r.PathValue("name"), GetParam(r.Context(), "id"))
+	})
 
-	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/foo/1/goblin", nil))
+	r.Methods(http.MethodGet).Handler(`/foo/:id/:name`, h)
+	r.Methods(http.MethodGet).Handler(`/regex/:id[^\d+$]`, h)
+	r.Methods(http.MethodGet).Handler(`/static`, h)
+	r.Methods(http.MethodGet).Handler(`/dup/:id/:id`, h)
+	r.Methods(http.MethodGet).Use(mw).Handler(`/middleware/:id`, h)
 
-	if rec.Code != http.StatusOK {
-		t.Errorf("actual: %v expected: %v\n", rec.Code, http.StatusOK)
+	cases := []struct {
+		name string
+		path string
+		body string
+		mwID string
+	}{
+		{
+			name: "named params",
+			path: "/foo/1/goblin",
+			body: "id=1 name=goblin getparam_id=1",
+		},
+		{
+			name: "regex param",
+			path: "/regex/123",
+			body: "id=123 name= getparam_id=123",
+		},
+		{
+			name: "static route has no path values",
+			path: "/static",
+			body: "id= name= getparam_id=",
+		},
+		{
+			name: "duplicated param name resolves to the first value like GetParam",
+			path: "/dup/first/second",
+			body: "id=first name= getparam_id=first",
+		},
+		{
+			name: "middleware can read path values",
+			path: "/middleware/1",
+			body: "id=1 name= getparam_id=1",
+			mwID: "1",
+		},
 	}
 
-	if rec.Body.String() != "/foo/1/goblin" {
-		t.Errorf("actual: %v expected: %v\n", rec.Body.String(), "/foo/1/goblin")
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			mwID = ""
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, c.path, nil))
+
+			if rec.Code != http.StatusOK {
+				t.Errorf("actual: %v expected: %v\n", rec.Code, http.StatusOK)
+			}
+			if rec.Body.String() != c.body {
+				t.Errorf("actual: %v expected: %v\n", rec.Body.String(), c.body)
+			}
+			if mwID != c.mwID {
+				t.Errorf("actual: %v expected: %v\n", mwID, c.mwID)
+			}
+		})
 	}
 }
 
