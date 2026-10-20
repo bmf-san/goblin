@@ -368,6 +368,30 @@ func TestRouter(t *testing.T) {
 	}
 }
 
+func TestRouterParamsUnderConcurrency(t *testing.T) {
+	r := NewRouter()
+	r.Methods(http.MethodGet).Handler(`/foo/:id/:name`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "/foo/%v/%v", GetParam(r.Context(), "id"), GetParam(r.Context(), "name"))
+	}))
+
+	var wg sync.WaitGroup
+	for g := 0; g < 20; g++ {
+		wg.Add(1)
+		go func(g int) {
+			defer wg.Done()
+			for i := 0; i < 50; i++ {
+				expected := fmt.Sprintf("/foo/%d/%d", g, i)
+				rec := httptest.NewRecorder()
+				r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, expected, nil))
+				if rec.Body.String() != expected {
+					t.Errorf("actual: %v expected: %v\n", rec.Body.String(), expected)
+				}
+			}
+		}(g)
+	}
+	wg.Wait()
+}
+
 func TestDefaultErrorHandler(t *testing.T) {
 	r := NewRouter()
 	r.Methods(http.MethodGet).Handler(`/defaulterrorhandler`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))

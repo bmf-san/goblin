@@ -185,7 +185,12 @@ func (t *tree) Search(path string) (*action, Params, error) {
 
 	cnt := strings.Count(path, "/")
 	var l string
-	var params Params
+	// ps is a pooled buffer used only while searching. it is never returned to
+	// the caller, because the caller keeps the parameters after Search returns.
+	var ps *Params
+	defer func() {
+		t.putParams(ps)
+	}()
 
 	for i := 0; i < cnt; i++ {
 		// Delete the / at head of path. ex. /foo/bar → foo/bar
@@ -238,20 +243,13 @@ func (t *tree) Search(path string) (*action, Params, error) {
 
 				pn := getParamName(c.label)
 
-				if params == nil {
-					ps := t.getParams()
-					params = (*ps)[0:1]
-					params[0] = Param{
-						key:   pn,
-						value: l,
-					}
-					t.putParams(ps)
-				} else {
-					params = append(params, Param{
-						key:   pn,
-						value: l,
-					})
+				if ps == nil {
+					ps = t.getParams()
 				}
+				*ps = append(*ps, Param{
+					key:   pn,
+					value: l,
+				})
 
 				curNode = c
 				isParamMatch = true
@@ -273,9 +271,11 @@ func (t *tree) Search(path string) (*action, Params, error) {
 		// no matching handler and middlewares was found.
 		return nil, nil, ErrNotFound
 	}
-	if params == nil {
+	if ps == nil {
 		return action, nil, nil
 	}
+	params := make(Params, len(*ps))
+	copy(params, *ps)
 	return action, params, nil
 }
 
