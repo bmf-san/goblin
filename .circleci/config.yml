@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  codecov: codecov/codecov@3.2.2
+  codecov: codecov/codecov@6.1.0
 
 jobs:
   "test":
@@ -61,7 +61,7 @@ jobs:
           name: Generate coverage
           command: make test-cover OUT=<< parameters.version >>.out
       - codecov/upload:
-          file: ./<< parameters.version >>.out
+          files: ./<< parameters.version >>.out
 
 workflows:
   tests:
