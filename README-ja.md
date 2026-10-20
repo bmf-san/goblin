@@ -56,8 +56,8 @@
   - デフォルトOPTIONSハンドラー
 - 0allocs
   - 静的なルーティングにおいて0allocsを達成
-  - 名前付きルーティングについては3allocs程度
-    - パラメータのslice生成やパラメータをcontextに格納する部分でヒープ割当が発生
+  - 名前付きルーティングについては5allocs程度（パラメータが多いルーティングではさらに増加）
+    - パラメータのslice生成、パラメータのcontextへの格納、リクエストのパス値への設定の部分でヒープ割当が発生
 
 # インストール
 ```sh
@@ -112,6 +112,15 @@ r.Methods(http.MethodGet).Handler(`/foo/:name`, http.HandlerFunc(func(w http.Res
 }))
 
 http.ListenAndServe(":9999", r)
+```
+
+net/httpのServeMuxと同様に、[Request.PathValue](https://pkg.go.dev/net/http#Request.PathValue)でもパラメータを取得できます。
+
+```go
+r.Methods(http.MethodGet).Handler(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := r.PathValue("id")
+    fmt.Fprintf(w, "/foo/%v", id)
+}))
 ```
 
 ## 正規表現を使ったルーティング
