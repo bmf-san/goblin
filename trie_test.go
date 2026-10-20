@@ -50,6 +50,38 @@ func TestGetParamsAndPutParams(t *testing.T) {
 	}
 }
 
+func TestSearchParamsAreNotReused(t *testing.T) {
+	tree := newTree()
+	fooHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	tree.Insert(`/foo/:id/:name`, fooHandler, nil)
+
+	_, actual, err := tree.Search("/foo/1/john")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// later searches must not overwrite parameters already returned to a caller.
+	for i := 0; i < 100; i++ {
+		if _, _, err := tree.Search(fmt.Sprintf("/foo/%d/bob", i+2)); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+
+	expected := Params{
+		{
+			key:   "id",
+			value: "1",
+		},
+		{
+			key:   "name",
+			value: "john",
+		},
+	}
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("actual: %v expected: %v\n", actual, expected)
+	}
+}
+
 // item is a set of routing definition.
 type item struct {
 	path string
