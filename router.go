@@ -116,6 +116,11 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if params != nil {
 		ctx := context.WithValue(req.Context(), ParamsKey, params)
 		req = req.WithContext(ctx)
+		// set path values for compatibility with net/http.
+		// iterate in reverse so that the first value wins for duplicated names, as GetParam does.
+		for i := len(params) - 1; i >= 0; i-- {
+			req.SetPathValue(params[i].key, params[i].value)
+		}
 	}
 	h.ServeHTTP(w, req)
 }

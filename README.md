@@ -56,8 +56,8 @@ This logo was created by [gopherize.me](https://gopherize.me/gopher/d654ddf2b81c
   - Default OPTIONS handler
 - 0allocs
   - Achieve 0 allocations in static routing
-  - About 4allocs for named routes
-     - Heap allocation occurs when creating parameter slices and storing parameters in context
+  - About 6allocs for named routes (more for routes with many parameters)
+     - Heap allocation occurs when creating parameter slices, storing parameters in context and setting them as path values of the request
 
 # Install
 ```sh
@@ -112,6 +112,15 @@ r.Methods(http.MethodGet).Handler(`/foo/:name`, http.HandlerFunc(func(w http.Res
 }))
 
 http.ListenAndServe(":9999", r)
+```
+
+Parameters can also be read with [Request.PathValue](https://pkg.go.dev/net/http#Request.PathValue), in the same way as net/http's ServeMux.
+
+```go
+r.Methods(http.MethodGet).Handler(`/foo/:id`, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    id := r.PathValue("id")
+    fmt.Fprintf(w, "/foo/%v", id)
+}))
 ```
 
 ## Regular expression based routing
